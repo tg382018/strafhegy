@@ -126,7 +126,8 @@ contract StrafhegySocial_uint32 is ZamaEthereumConfig {
     // Subscriber
     // ============
 
-    function subscribe(address creator) external payable onlyCreatorProfile(creator) {
+    function subscribe(address creator) external payable {
+        require(creatorActive[creator], "CreatorNotActive");
         uint256 price = monthlyPriceWei[creator];
         require(price > 0, "PriceNotSet");
         require(msg.value >= price, "InsufficientPayment");
@@ -138,10 +139,18 @@ contract StrafhegySocial_uint32 is ZamaEthereumConfig {
         subscriptionExpiry[creator][msg.sender] = newExpiry;
 
         // pay creator immediately (simple MVP path)
-        (bool ok, ) = payable(creator).call{value: msg.value}("");
-        require(ok, "PaymentFailed");
+        if (creator != msg.sender) {
+            (bool ok, ) = payable(creator).call{value: msg.value}("");
+            require(ok, "PaymentFailed");
+        } else {
+            // Refund if subscribing to self (testing purpose)
+            (bool ok, ) = payable(msg.sender).call{value: msg.value}("");
+            require(ok, "RefundFailed");
+        }
 
-        _grantAllPositions(creator, msg.sender);
+        // _grantAllPositions(creator, msg.sender);
+        // Note: Permissions are NOT auto-granted to save gas.
+        // User must call grantAccess() or refreshAccess() separately if needed.
         emit Subscribed(msg.sender, creator, newExpiry, msg.value);
     }
 
@@ -153,9 +162,33 @@ contract StrafhegySocial_uint32 is ZamaEthereumConfig {
         _grantAllPositions(creator, msg.sender);
     }
 
+    function grantAccess(address creator, uint256[] calldata positionIds)
+        external
+        onlyCreatorProfile(creator)
+        onlyActiveSubscription(creator, msg.sender)
+    {
+        Position[] storage arr = _positions[creator];
+        for (uint256 i = 0; i < positionIds.length; i++) {
+            uint256 pid = positionIds[i];
+            if (pid >= arr.length || !arr[pid].exists) continue;
+            
+            FHE.allow(arr[pid].coinCode, msg.sender);
+            FHE.allow(arr[pid].expectation, msg.sender);
+            FHE.allow(arr[pid].entryPrice, msg.sender);
+            FHE.allow(arr[pid].openedAt, msg.sender);
+            FHE.allow(arr[pid].target, msg.sender);
+            FHE.allow(arr[pid].status, msg.sender);
+        }
+    }
+
     function _grantAllPositions(address creator, address subscriber) internal {
         Position[] storage arr = _positions[creator];
-        for (uint256 i = 0; i < arr.length; i++) {
+        // Optimization: Only grant access to the last 5 positions
+        uint256 start = 0;
+        if (arr.length > 5) {
+            start = arr.length - 5;
+        }
+        for (uint256 i = start; i < arr.length; i++) {
             if (!arr[i].exists) continue;
             FHE.allow(arr[i].coinCode, subscriber);
             FHE.allow(arr[i].expectation, subscriber);

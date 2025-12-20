@@ -34,6 +34,7 @@ export interface StrafhegySocial_uint32Interface extends Interface {
       | "getCreatorCount"
       | "getPosition"
       | "getPositionCount"
+      | "grantAccess"
       | "monthlyPriceWei"
       | "refreshAccess"
       | "subscribe"
@@ -92,6 +93,10 @@ export interface StrafhegySocial_uint32Interface extends Interface {
     values: [AddressLike]
   ): string;
   encodeFunctionData(
+    functionFragment: "grantAccess",
+    values: [AddressLike, BigNumberish[]]
+  ): string;
+  encodeFunctionData(
     functionFragment: "monthlyPriceWei",
     values: [AddressLike]
   ): string;
@@ -146,6 +151,10 @@ export interface StrafhegySocial_uint32Interface extends Interface {
   ): Result;
   decodeFunctionResult(
     functionFragment: "getPositionCount",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "grantAccess",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -334,6 +343,12 @@ export interface StrafhegySocial_uint32 extends BaseContract {
     "view"
   >;
 
+  grantAccess: TypedContractMethod<
+    [creator: AddressLike, positionIds: BigNumberish[]],
+    [void],
+    "nonpayable"
+  >;
+
   monthlyPriceWei: TypedContractMethod<[arg0: AddressLike], [bigint], "view">;
 
   refreshAccess: TypedContractMethod<
@@ -422,6 +437,13 @@ export interface StrafhegySocial_uint32 extends BaseContract {
   getFunction(
     nameOrSignature: "getPositionCount"
   ): TypedContractMethod<[creator: AddressLike], [bigint], "view">;
+  getFunction(
+    nameOrSignature: "grantAccess"
+  ): TypedContractMethod<
+    [creator: AddressLike, positionIds: BigNumberish[]],
+    [void],
+    "nonpayable"
+  >;
   getFunction(
     nameOrSignature: "monthlyPriceWei"
   ): TypedContractMethod<[arg0: AddressLike], [bigint], "view">;

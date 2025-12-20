@@ -149,14 +149,40 @@
             </div>
           </div>
 
-          <button
-            v-if="creator.subscribed || creator.isOwnCard"
-            class="sub-btn secondary"
-            :disabled="!canWrite || creator.isBusy"
-            @click="refreshAndDecrypt(creator)"
-          >
-            {{ creator.isBusy ? "İşleniyor..." : "Refresh (yeni pozisyonları aç)" }}
-          </button>
+          <!-- Action buttons for subscribed/own cards -->
+          <div v-if="creator.subscribed || creator.isOwnCard" class="mt-4 flex flex-col gap-2">
+            <!-- Decrypt Yourself button (own card with encrypted data) -->
+            <button
+              v-if="creator.isOwnCard && creator.positions.some(p => p.coin === '***')"
+              class="sub-btn"
+              style="background: #2563eb !important;"
+              :disabled="!canWrite || creator.isBusy"
+              @click="refreshAndDecrypt(creator)"
+            >
+              {{ creator.isBusy ? "İşleniyor..." : "Decrypt Yourself" }}
+            </button>
+
+            <!-- Start Decryption button (subscribed creator with encrypted data) -->
+            <button
+              v-else-if="!creator.isOwnCard && creator.positions.some(p => p.coin === '***')"
+              class="sub-btn"
+              style="background: #9333ea !important;"
+              :disabled="!canWrite || creator.isBusy"
+              @click="refreshAndDecrypt(creator)"
+            >
+              {{ creator.isBusy ? "İşleniyor..." : "Start Decryption" }}
+            </button>
+
+            <!-- Refresh button (always available for subscribed/own cards) -->
+            <button
+              class="sub-btn secondary"
+              :disabled="!canWrite || creator.isBusy"
+              @click="refreshAndDecrypt(creator)"
+            >
+              {{ creator.isBusy ? "İşleniyor..." : "Refresh (yeni pozisyonları aç)" }}
+            </button>
+          </div>
+
           <div v-if="(creator.subscribed || creator.isOwnCard) && creator.expiresAt" class="sub-info">
             Kalan gün: {{ remainingDaysFromExpiry(creator.expiresAt) }}
           </div>
@@ -180,7 +206,7 @@ import { useWalletVue, useFhevmVue, getFheInstance, batchDecryptValues } from ".
 
 // Fill this after deploy. We'll also add local hardhat address later.
 const CONTRACT_ADDRESSES: Record<number, string> = {
-  11155111: "0x294A0535C6f9Ea83b11DA2D002C56FED908330D9", // Sepolia (updated with getAllCreators)
+  11155111: "0x1c41680a372C06A67ff0B247Adf687bF548C714F", // Sepolia (updated with getAllCreators)
   31337: "", // Local
 };
 
@@ -262,6 +288,7 @@ const SOCIAL_ABI = [
   },
   { name: "subscribe", type: "function", stateMutability: "payable", inputs: [{ name: "creator", type: "address" }], outputs: [] },
   { name: "refreshAccess", type: "function", stateMutability: "nonpayable", inputs: [{ name: "creator", type: "address" }], outputs: [] },
+  { name: "grantAccess", type: "function", stateMutability: "nonpayable", inputs: [{ name: "creator", type: "address" }, { name: "positionIds", type: "uint256[]" }], outputs: [] },
   { name: "getCreatorCount", type: "function", stateMutability: "view", inputs: [], outputs: [{ name: "", type: "uint256" }] },
   { name: "getCreatorAt", type: "function", stateMutability: "view", inputs: [{ name: "index", type: "uint256" }], outputs: [{ name: "", type: "address" }] },
   { name: "getAllCreators", type: "function", stateMutability: "view", inputs: [], outputs: [{ name: "", type: "address[]" }] },
@@ -451,12 +478,19 @@ async function encryptMany32(contractAddr: string, userAddr: string, values: num
 
 async function onToggleWallet() {
   if (!isConnected.value) {
+    console.log("Connecting wallet...");
+    console.log("Connecting wallet...");
     await connect();
     if (chainId.value !== 11155111) await switchToSepolia();
-    if (isConnected.value && fhevmStatus.value === "idle") await initFhevm();
+    if (isConnected.value && fhevmStatus.value === "idle") {
+      console.log("Initializing FHEVM...");
+      await initFhevm();
+      console.log("FHEVM initialized, status:", fhevmStatus.value);
+    }
     await ensureCreators();
     await hydrateAllCreators();
   } else {
+    console.log("Disconnecting wallet...");
     disconnect();
     creators.splice(0, creators.length);
   }
@@ -477,7 +511,7 @@ async function ensureCreators() {
       if (!creators.find((c) => c.address.toLowerCase() === addrLower)) {
         creators.push({
           address: addr,
-          avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${addr}`,
+          avatar: `https://api.dicebear.com/9.x/avataaars/svg?seed=${addr}`,
           monthlyPriceWei: ethers.parseEther("0.005"),
           subscribed: false,
           isOwnCard: addrLower === me,
@@ -493,7 +527,7 @@ async function ensureCreators() {
   if (!creators.find((c) => c.address.toLowerCase() === me)) {
     creators.unshift({
       address: account.value,
-      avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${account.value}`,
+      avatar: `https://api.dicebear.com/9.x/avataaars/svg?seed=${account.value}`,
       monthlyPriceWei: ethers.parseEther("0.005"),
       subscribed: false,
       isOwnCard: true,
@@ -517,6 +551,7 @@ async function hydrateAllCreators() {
 }
 
 async function hydrateCreator(read: any, c: CreatorCard) {
+  console.group(`Hydrating Creator: ${c.address}`);
   c.subscribed = false;
   c.expiresAt = undefined;
 
@@ -527,60 +562,74 @@ async function hydrateCreator(read: any, c: CreatorCard) {
   // Load profile price if active
   try {
     const active = await read.creatorActive(c.address);
+    console.log(`- Active: ${active}`);
     if (active) {
       const price = await read.monthlyPriceWei(c.address);
+      console.log(`- Monthly Price (Wei): ${price.toString()}`);
       c.monthlyPriceWei = BigInt(price.toString());
     }
-  } catch {}
+  } catch (e) {
+    console.log(`- Error fetching active/price:`, e);
+  }
 
   // Subscription state
   if (isConnected.value) {
     try {
       const exp = await read.subscriptionExpiry(c.address, account.value);
       const expN = Number(exp.toString());
+      console.log(`- Subscription Expiry (Unix): ${expN}`);
       c.expiresAt = expN;
       // Subscribed if: expiry is in future OR it's the user's own card
       c.subscribed = expN > Math.floor(Date.now() / 1000);
-    } catch {}
+      console.log(`- Is Subscribed: ${c.subscribed} (Own: ${isOwn})`);
+    } catch (e) {
+      console.log(`- Error fetching subscription:`, e);
+    }
   }
 
   // Can decrypt if: subscribed OR own card
   const canDecrypt = c.subscribed || isOwn;
 
-  // If can decrypt and cache valid, use it
+  // Always try to use cache first (no decrypt signature needed)
   const cached = cacheRead(c.address);
-  if (canDecrypt && cached?.expiresAt && cached.expiresAt > Math.floor(Date.now() / 1000) && Array.isArray(cached.positions)) {
+  if (cached?.expiresAt && cached.expiresAt > Math.floor(Date.now() / 1000) && Array.isArray(cached.positions)) {
+    console.log(`- Using cached positions (${cached.positions.length})`);
     c.positions = cached.positions;
+    console.groupEnd();
     return;
   }
 
-  // Otherwise, load placeholder positions count
+  // Load placeholder positions count (for display)
   let count = 0;
   try {
     count = Number((await read.getPositionCount(c.address)).toString());
-  } catch {
+    console.log(`- Position Count: ${count}`);
+  } catch (e) {
+    console.log(`- Error fetching position count:`, e);
     count = 0;
   }
-  c.positions = Array.from({ length: Math.max(1, count || 1) }).map((_, i) => ({
+  c.positions = Array.from({ length: count }).map((_, i) => ({
     positionId: i,
-    coin: "",
-    expectationLabel: "",
-    entry: "",
-    openedAt: "",
-    target: "",
-    statusLabel: "",
+    coin: "***",
+    expectationLabel: "***",
+    entry: "***",
+    openedAt: "***",
+    target: "***",
+    statusLabel: "***",
   }));
 
+  // Don't auto-decrypt here - user must click "Refresh" button
+  // This avoids constant signature requests on page load
   if (!canDecrypt) {
     cacheClear(c.address);
-    return;
   }
-
-  // Can decrypt (subscribed or own card) but not cached -> decrypt now
-  await decryptCreatorPositions(read, c);
+  console.groupEnd();
+  // Note: decryptCreatorPositions is now only called from:
+  // - refreshAndDecrypt() (when user clicks Refresh button)
+  // - addPosition() (after adding new position)
 }
 
-async function decryptCreatorPositions(read: any, c: CreatorCard) {
+async function decryptCreatorPositions(read: any, c: CreatorCard, retryCount = 0) {
   if (!window.ethereum) return;
   const provider = new ethers.BrowserProvider(window.ethereum);
   const signer = await provider.getSigner();
@@ -588,38 +637,58 @@ async function decryptCreatorPositions(read: any, c: CreatorCard) {
   const count = Number((await read.getPositionCount(c.address)).toString());
   const positions: PositionView[] = [];
 
-  for (let i = 0; i < count; i++) {
-    const res = await read.getPosition(c.address, i);
-    const handles = [
-      ethers.hexlify(res[0]),
-      ethers.hexlify(res[1]),
-      ethers.hexlify(res[2]),
-      ethers.hexlify(res[3]),
-      ethers.hexlify(res[4]),
-      ethers.hexlify(res[5]),
-    ];
+  try {
+    for (let i = 0; i < count; i++) {
+      console.log(`Decrypting position ${i}...`);
+      const res = await read.getPosition(c.address, i);
+      const handles = [
+        ethers.hexlify(res[0]),
+        ethers.hexlify(res[1]),
+        ethers.hexlify(res[2]),
+        ethers.hexlify(res[3]),
+        ethers.hexlify(res[4]),
+        ethers.hexlify(res[5]),
+      ];
+      console.log(`- Handles:`, handles);
 
-    const decrypted = await batchDecryptValues(handles, contractAddress.value, signer);
-    const coinCode = decrypted[handles[0]];
-    const expV = decrypted[handles[1]];
-    const entryV = decrypted[handles[2]];
-    const openedV = decrypted[handles[3]];
-    const targetV = decrypted[handles[4]];
-    const statusV = decrypted[handles[5]];
+      const decrypted = await batchDecryptValues(handles, contractAddress.value, signer);
+      console.log(`- Decrypted raw values:`, decrypted);
+      
+      const coinCode = decrypted[handles[0]];
+      const expV = decrypted[handles[1]];
+      const entryV = decrypted[handles[2]];
+      const openedV = decrypted[handles[3]];
+      const targetV = decrypted[handles[4]];
+      const statusV = decrypted[handles[5]];
 
-    positions.push({
-      positionId: i,
-      coin: coinFromCode(coinCode),
-      expectationLabel: expectationLabel(expV),
-      entry: (entryV / 100).toFixed(2),
-      openedAt: fmtDate(openedV),
-      target: (targetV / 100).toFixed(2),
-      statusLabel: statusLabel(statusV),
-    });
+      positions.push({
+        positionId: i,
+        coin: coinFromCode(coinCode),
+        expectationLabel: expectationLabel(expV),
+        entry: (entryV / 100).toFixed(2),
+        openedAt: fmtDate(openedV),
+        target: (targetV / 100).toFixed(2),
+        statusLabel: statusLabel(statusV),
+      });
+    }
+
+    c.positions = positions;
+    cacheWrite(c.address, { expiresAt: c.expiresAt ?? Math.floor(Date.now() / 1000) + 3600, positions });
+  } catch (error: any) {
+    // If authorization error and own card, retry after short delay (FHEVM needs time to process FHE.allow)
+    if (
+      error?.message?.includes("not authorized to user decrypt") &&
+      c.isOwnCard &&
+      retryCount < 5
+    ) {
+      console.log(`Decrypt authorization pending for own card, retrying in 4s... (${retryCount + 1}/5)`);
+      await new Promise((resolve) => setTimeout(resolve, 4000));
+      return decryptCreatorPositions(read, c, retryCount + 1);
+    }
+    // For other errors or max retries, log and keep placeholder positions
+    console.warn("Failed to decrypt positions for", c.address, error?.message || error);
+    // Keep existing placeholder positions
   }
-
-  c.positions = positions;
-  cacheWrite(c.address, { expiresAt: c.expiresAt ?? Math.floor(Date.now() / 1000) + 3600, positions });
 }
 
 async function subscribe(c: CreatorCard) {
@@ -627,10 +696,17 @@ async function subscribe(c: CreatorCard) {
   c.isBusy = true;
   try {
     const write = await getWriteContract();
-    const tx = await write.subscribe(c.address, { value: c.monthlyPriceWei, gasLimit: 900000 });
+    const tx = await write.subscribe(c.address, { value: c.monthlyPriceWei, gasLimit: 2000000 });
     await tx.wait();
+    
+    // Give FHEVM relayer time to process FHE.allow() permissions from subscribe
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+    
     const read = await getReadContract();
     await hydrateCreator(read, c);
+    // Don't auto-decrypt. User will see "Start Decryption" button.
+    // Permissions are already granted by the contract's subscribe function
+    // await decryptCreatorPositions(read, c);
   } catch (e: any) {
     console.error(e);
     alert(`Abonelik başarısız: ${e?.message ?? e}`);
@@ -643,10 +719,25 @@ async function refreshAndDecrypt(c: CreatorCard) {
   if (!canWrite.value) return;
   c.isBusy = true;
   try {
-    const write = await getWriteContract();
-    const tx = await write.refreshAccess(c.address, { gasLimit: 900000 });
-    await tx.wait();
     const read = await getReadContract();
+    const write = await getWriteContract();
+    
+    // If not own card and subscribed, grant access first
+    if (!c.isOwnCard && c.subscribed) {
+      console.log("Granting access to positions...");
+      const count = Number((await read.getPositionCount(c.address)).toString());
+      const start = Math.max(0, count - 5);
+      const ids = Array.from({ length: count - start }, (_, i) => start + i);
+      
+      if (ids.length > 0) {
+        const txGrant = await write.grantAccess(c.address, ids, { gasLimit: 10000000 });
+        await txGrant.wait();
+        console.log("Access granted!");
+      }
+    }
+    
+    // Refresh data and decrypt
+    await hydrateCreator(read, c);
     await decryptCreatorPositions(read, c);
   } catch (e: any) {
     console.error(e);
@@ -691,21 +782,31 @@ async function refreshMyProfileState(read?: any) {
 
     // If profile exists, default to summary view.
     if (myProfileReady.value) isEditingProfile.value = false;
-  } catch {
+    
+    console.log("refreshMyProfileState result:", { ready: myProfileReady.value, price: myMonthlyPriceWei.value });
+  } catch (e) {
+    console.error("refreshMyProfileState failed:", e);
     myProfileReady.value = false;
   }
 }
 
 async function upsertProfile() {
+  console.log("upsertProfile called. canWrite:", canWrite.value);
   if (!canWrite.value) return;
   isBusy.value = true;
   try {
     const write = await getWriteContract();
     const priceWei = ethers.parseEther(String(creatorPriceEth.value || "0"));
+    console.log("Sending upsertProfile tx...", priceWei);
     const tx = await write.upsertProfile(priceWei, true, { gasLimit: 600000 });
+    console.log("Tx sent, waiting...", tx.hash);
     await tx.wait();
+    console.log("Tx confirmed");
     await hydrateAllCreators();
     isEditingProfile.value = false;
+  } catch (e) {
+    console.error("upsertProfile failed:", e);
+    alert("Profil kaydedilemedi: " + e);
   } finally {
     isBusy.value = false;
   }
@@ -718,11 +819,15 @@ async function addPosition() {
     return;
   }
   isBusy.value = true;
+  console.log("Starting addPosition...");
+  console.log("Starting addPosition...");
   try {
     const write = await getWriteContract();
     const nowSec = Math.floor(Date.now() / 1000);
     const deadline = nowSec + 300;
 
+    console.log("Encrypting position data...");
+    console.log("Encrypting position data...");
     const coinCode = coinToCode(newPos.coinName);
     const enc = await encryptMany32(contractAddress.value, account.value, [
       coinCode,
@@ -732,7 +837,9 @@ async function addPosition() {
       newPos.target,
       0, // status = 0 (devam ediyor) - pozisyon oluşturulurken her zaman aktif
     ]);
+    console.log("Encryption complete, sending transaction...");
 
+    console.log("Encryption complete, sending transaction...");
     const tx = await write.addPosition(
       enc.handles[0],
       enc.handles[1],
@@ -742,12 +849,38 @@ async function addPosition() {
       enc.handles[5],
       deadline,
       enc.inputProof,
-      { gasLimit: 1200000 }
+      { gasLimit: 10000000 }
     );
+    console.log("Transaction sent, waiting for confirmation...");
     await tx.wait();
+    console.log("Transaction confirmed!");
+    
+    // Give FHEVM relayer time to process FHE.allow() permissions
+    console.log("Waiting for FHEVM relayer...");
+    await new Promise((resolve) => setTimeout(resolve, 3000));
+    
+    // Refresh only own card first (creator can see their positions)
+    const read = await getReadContract();
+    const ownCard = creators.find((c) => c.address.toLowerCase() === account.value.toLowerCase());
+    if (ownCard) {
+      console.log("Refreshing own card...");
+      console.log("Refreshing own card...");
+      await hydrateCreator(read, ownCard);
+      // Don't auto-decrypt. User will see "Decrypt Yourself" button.
+      /*
+      try {
+        await decryptCreatorPositions(read, ownCard);
+      } catch (decryptErr) {
+        console.error("Auto-decryption failed after adding position:", decryptErr);
+      }
+      */
+    }
+    
+    // Then refresh all other creators (they won't decrypt, just update counts)
     await hydrateAllCreators();
+    console.log("addPosition flow complete.");
   } catch (e: any) {
-    console.error(e);
+    console.error("addPosition failed:", e);
     alert(`Pozisyon ekleme başarısız: ${e?.message ?? e}`);
   } finally {
     isBusy.value = false;
