@@ -86,6 +86,14 @@ contract StrafhegySocial_uint32 is ZamaEthereumConfig {
         p.status = FHE.fromExternal(statusEnc, inputProof);
         p.exists = true;
 
+        // CRITICAL: Contract must have permission for user decryption to work!
+        FHE.allowThis(p.coinCode);
+        FHE.allowThis(p.expectation);
+        FHE.allowThis(p.entryPrice);
+        FHE.allowThis(p.openedAt);
+        FHE.allowThis(p.target);
+        FHE.allowThis(p.status);
+
         // Creator can always decrypt their own fields
         FHE.allow(p.coinCode, msg.sender);
         FHE.allow(p.expectation, msg.sender);
@@ -167,10 +175,21 @@ contract StrafhegySocial_uint32 is ZamaEthereumConfig {
         onlyCreatorProfile(creator)
         onlyActiveSubscription(creator, msg.sender)
     {
+        
+        
+        
         Position[] storage arr = _positions[creator];
+        
+        
         for (uint256 i = 0; i < positionIds.length; i++) {
             uint256 pid = positionIds[i];
-            if (pid >= arr.length || !arr[pid].exists) continue;
+            
+            
+            if (pid >= arr.length || !arr[pid].exists) {
+                
+                continue;
+            }
+            
             
             FHE.allow(arr[pid].coinCode, msg.sender);
             FHE.allow(arr[pid].expectation, msg.sender);
@@ -178,7 +197,9 @@ contract StrafhegySocial_uint32 is ZamaEthereumConfig {
             FHE.allow(arr[pid].openedAt, msg.sender);
             FHE.allow(arr[pid].target, msg.sender);
             FHE.allow(arr[pid].status, msg.sender);
+            
         }
+        
     }
 
     function _grantAllPositions(address creator, address subscriber) internal {

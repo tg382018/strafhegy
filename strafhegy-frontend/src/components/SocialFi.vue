@@ -206,7 +206,7 @@ import { useWalletVue, useFhevmVue, getFheInstance, batchDecryptValues } from ".
 
 // Fill this after deploy. We'll also add local hardhat address later.
 const CONTRACT_ADDRESSES: Record<number, string> = {
-  11155111: "0x1c41680a372C06A67ff0B247Adf687bF548C714F", // Sepolia (updated with getAllCreators)
+  11155111: "0x5F2328c6a961d845f5c55Dd098A71CbD954f9A63", // Sepolia (updated with getAllCreators)
   31337: "", // Local
 };
 
