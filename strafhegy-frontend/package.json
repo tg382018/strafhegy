@@ -1,0 +1,23 @@
+{
+  "name": "vue-showcase",
+  "version": "0.1.0",
+  "private": true,
+  "dependencies": {
+    "vue": "^3.4.0",
+    "ethers": "^6.13.1"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "cd ../strafhegy-backend && npx hardhat test ../strafhegy-frontend/test/FHECounter.test.js ../strafhegy-frontend/test/FHERatings.test.js ../strafhegy-frontend/test/SimpleVoting.test.js",
+    "test:watch": "cd ../strafhegy-backend && npx hardhat test ../strafhegy-frontend/test/FHECounter.test.js ../strafhegy-frontend/test/FHERatings.test.js ../strafhegy-frontend/test/SimpleVoting.test.js --watch"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.30",
+    "@vitejs/plugin-vue": "^5.0.0",
+    "typescript": "^5.0.0",
+    "vite": "^5.0.0",
+    "vue-tsc": "^1.8.0"
+  }
+}

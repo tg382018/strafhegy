@@ -1,0 +1,69 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+:root { --gold: 232, 207, 107; }
+
+.bg-gold {
+  background: linear-gradient(
+    90deg,
+    rgba(var(--gold), 0.95) 0%,
+    rgba(var(--gold), 0.85) 60%,
+    rgba(var(--gold), 0.95) 100%
+  );
+}
+body { @apply bg-background text-foreground; }
+
+/* globals or src/assets/main.css */
+.bg-zama {
+  --gold: 232, 207, 107;
+
+  background:
+    /* large top-right glow — LESS intense (0.26) and WIDER (fade to 85%) */
+    radial-gradient(1200px 900px at 92% 6%,
+      rgba(var(--gold), 0.26),
+      rgba(var(--gold), 0.10) 40%,
+      transparent 85%),
+
+    /* shift emphasis further down the page */
+    radial-gradient(900px 700px at 100% 72%,
+      rgba(var(--gold), 0.18),
+      transparent 72%),
+
+    /* dark base */
+    linear-gradient(180deg, #0b0f19 0%, #0a0d14 100%);
+}
+
+@layer components {
+  .btn {
+    @apply inline-flex items-center justify-center px-4 py-2 rounded-md font-medium
+           transition-all duration-200
+           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary
+           focus-visible:ring-offset-2 focus-visible:ring-offset-surface;
+  }
+
+  /* Primary gradient button */
+  .btn--primary {
+    @apply bg-gradient-to-r from-primary-300 to-primary-200 text-primary-foreground
+           hover:from-primary-400 hover:to-primary-300
+           /* Disabled theme */
+           disabled:from-slate-700 disabled:to-slate-700 disabled:text-slate-400
+           disabled:opacity-60 disabled:cursor-not-allowed disabled:pointer-events-none
+           disabled:shadow-none disabled:ring-0;
+  }
+
+  /* Subtle / ghost button (for “Close”, etc.) */
+  .btn--ghost {
+    @apply border border-slate-700 text-slate-200 hover:bg-slate-800
+           disabled:bg-slate-800/40 disabled:text-slate-500
+           disabled:opacity-60 disabled:cursor-not-allowed disabled:pointer-events-none;
+  }
+
+  /* Danger button (destructive actions) */
+  .btn--danger {
+    @apply bg-red-600 text-white hover:bg-red-500
+           disabled:bg-red-800 disabled:text-red-200
+           disabled:opacity-60 disabled:cursor-not-allowed disabled:pointer-events-none;
+  }
+}
