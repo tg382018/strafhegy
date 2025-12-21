@@ -90,12 +90,12 @@
                 </select>
               </label>
               <label class="field">
-                <span>Entry price (x100)</span>
-                <input v-model.number="newPos.entryPrice" class="input" type="number" placeholder="10000" />
+                <span>Entry price</span>
+                <input v-model="newPos.entryPrice" class="input" type="text" placeholder="100.00" />
               </label>
               <label class="field">
-                <span>Target price (x100)</span>
-                <input v-model.number="newPos.target" class="input" type="number" placeholder="12000" />
+                <span>Target price</span>
+                <input v-model="newPos.target" class="input" type="text" placeholder="120.00" />
               </label>
             </div>
             <button class="sub-btn" :disabled="!canWrite || isBusy" @click="addPosition">
@@ -460,8 +460,8 @@ const myRemainingDaysLabel = computed(() => {
 const newPos = reactive({
   coinName: "ETH",
   expectation: 1,
-  entryPrice: 10000, // x100
-  target: 12000, // x100
+  entryPrice: "100.00",
+  target: "120.00",
 });
 
 // =========
@@ -502,6 +502,15 @@ function formatEth(wei: bigint) {
   } catch {
     return "0.00000";
   }
+}
+
+function parsePrice(val: string): number {
+  if (!val) return 0;
+  // Replace comma with dot, remove non-numeric chars except dot
+  const clean = val.replace(",", ".").replace(/[^0-9.]/g, "");
+  const num = parseFloat(clean);
+  if (isNaN(num)) return 0;
+  return Math.round(num * 100);
 }
 
 function coinFromCode(code: number) {
@@ -1017,13 +1026,16 @@ async function addPosition() {
     console.log("Encrypting position data...");
     console.log("Encrypting position data...");
     const coinCode = coinToCode(newPos.coinName);
+    const entryVal = parsePrice(newPos.entryPrice);
+    const targetVal = parsePrice(newPos.target);
+    
     const enc = await encryptMany32(contractAddress.value, account.value, [
       coinCode,
       newPos.expectation,
-      newPos.entryPrice,
+      entryVal,
       nowSec,
-      newPos.target,
-      0, // status = 0 (devam ediyor) - pozisyon oluşturulurken her zaman aktif
+      targetVal,
+      0, // status = 0 (devam ediyor)
     ]);
     console.log("Encryption complete, sending transaction...");
 
