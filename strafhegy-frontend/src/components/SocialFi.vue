@@ -484,13 +484,33 @@ function formatEth(wei: bigint) {
 
 function coinFromCode(code: number) {
   const map: Record<number, string> = { 1: "ETH", 2: "BTC", 3: "SOL", 4: "AVAX", 5: "LINK", 6: "UNI" };
-  return map[code] ?? `COIN#${code}`;
+  if (map[code]) return map[code];
+  
+  // If code > 100, try to decode as 4-char ASCII
+  if (code > 100) {
+    let name = "";
+    for (let i = 3; i >= 0; i--) {
+      const charCode = (code >> (i * 8)) & 0xFF;
+      if (charCode > 0) name += String.fromCharCode(charCode);
+    }
+    return name || `COIN#${code}`;
+  }
+  
+  return `COIN#${code}`;
 }
 
 function coinToCode(name: string): number {
   const map: Record<string, number> = { ETH: 1, BTC: 2, SOL: 3, AVAX: 4, LINK: 5, UNI: 6 };
   const upper = name.trim().toUpperCase();
-  return map[upper] ?? 99; // 99 = unknown coin
+  if (map[upper]) return map[upper];
+  
+  // Encode up to 4 chars as ASCII into uint32
+  let code = 0;
+  const str = upper.slice(0, 4);
+  for (let i = 0; i < str.length; i++) {
+    code = (code << 8) | str.charCodeAt(i);
+  }
+  return code || 99;
 }
 
 function expectationLabel(v: number) {
@@ -1058,7 +1078,7 @@ header {
 /* Strafhegy Logo Component Styles */
 .straf-logo-component {
   --logo-scale: 0.6; 
-  --primary-color: #00f3ff;
+  --primary-color: #006400; /* Koyu Yeşil */
   --secondary-color: #bc13fe;
   --text-color: #ffffff;
   
@@ -1120,10 +1140,10 @@ header {
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: calc(1px * var(--logo-scale));
-  background: linear-gradient(90deg, #fff, var(--primary-color));
+  background: linear-gradient(90deg, #888, var(--primary-color));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
-  text-shadow: 0 0 calc(10px * var(--logo-scale)) rgba(0, 243, 255, 0.3);
+  text-shadow: 0 0 calc(10px * var(--logo-scale)) rgba(0, 100, 0, 0.3);
 }
 
 .straf-subtitle {
