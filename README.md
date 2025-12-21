@@ -2,7 +2,7 @@
 
 Strafhegy is a decentralized SocialFi platform built on **FHEVM (Zama)** that allows traders (Creators) to share their strategies while keeping the actual position details (Coin, Entry, Target) fully encrypted on-chain. Only active subscribers can decrypt and view these positions.
 
-![Strafhegy UI](https://api.dicebear.com/9.x/avataaars/svg?seed=strafhegy)
+
 
 ## 🚀 Key Features
 
