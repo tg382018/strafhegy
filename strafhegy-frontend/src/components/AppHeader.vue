@@ -24,15 +24,16 @@
           placeholder="Search creators by username or address..." 
         />
       </div>
-      <button class="win-btn how-to-use-btn" @click="$emit('showHelp')">How to Use</button>
-      <button class="connect-btn" :class="{ connected: isConnected }" @click="$emit('toggleWallet')">
+      <WinButton variant="sub" class="how-to-use-btn" @click="$emit('showHelp')">How to Use</WinButton>
+      <WinButton variant="sub" :class="{ connected: isConnected }" @click="$emit('toggleWallet')">
         {{ connectLabel }}
-      </button>
+      </WinButton>
     </div>
   </header>
 </template>
 
 <script setup lang="ts">
+import WinButton from "./WinButton.vue";
 defineProps<{
   isConnected: boolean;
   connectLabel: string;

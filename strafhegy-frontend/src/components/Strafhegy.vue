@@ -18,9 +18,9 @@
         <div class="card-header">
           <span>Creator.exe</span>
           <div class="window-controls">
-            <button class="win-btn" @click="myPanelMinimized = true">_</button>
-            <button class="win-btn" disabled>□</button>
-            <button class="win-btn close-btn" disabled>×</button>
+            <WinButton @click="myPanelMinimized = true">_</WinButton>
+            <WinButton disabled>□</WinButton>
+            <WinButton variant="win" disabled>×</WinButton>
           </div>
         </div>
         <div class="profile-section">
@@ -48,9 +48,9 @@
                   <input v-model="creatorPriceEth" class="input" placeholder="0.005" />
                 </label>
               </div>
-              <button class="sub-btn" :disabled="!canWrite || isBusy || !myUsername.trim()" @click="upsertProfile">
+              <WinButton variant="sub" :disabled="!canWrite || isBusy || !myUsername.trim()" @click="upsertProfile">
                 {{ isBusy ? "Processing..." : "Save Profile" }}
-              </button>
+              </WinButton>
             </template>
             <template v-else>
               <div class="pos-details">
@@ -58,7 +58,7 @@
                 <span class="value">{{ formatEth(myMonthlyPriceWei) }} ETH</span>
               </div>
 
-              <button class="sub-btn secondary" :disabled="isBusy" @click="startEditProfile">Change monthly fee</button>
+              <WinButton variant="secondary" :disabled="isBusy" @click="startEditProfile">Change monthly fee</WinButton>
             </template>
           </div>
 
@@ -88,9 +88,9 @@
                 <input v-model="newPos.target" class="input" type="text" placeholder="120.00" @input="newPos.target = cleanPriceInput(newPos.target)" />
               </label>
             </div>
-            <button class="sub-btn" :disabled="!canWrite || isBusy || !isValidPrice(newPos.entryPrice) || !isValidPrice(newPos.target)" @click="addPosition">
+            <WinButton variant="sub" :disabled="!canWrite || isBusy || !isValidPrice(newPos.entryPrice) || !isValidPrice(newPos.target)" @click="addPosition">
               {{ isBusy ? "Processing..." : "Add Position" }}
-            </button>
+            </WinButton>
             <div class="sub-info">
               Status is automatically set to "In progress" when a position is created.
             </div>
@@ -112,9 +112,9 @@
         <div class="card-header">
           <span>{{ ownCard.username || 'User' }}.exe</span>
           <div class="window-controls">
-            <button class="win-btn" @click="ownCard.isMinimized = true">_</button>
-            <button class="win-btn" disabled>□</button>
-            <button class="win-btn close-btn" disabled>×</button>
+            <WinButton @click="ownCard.isMinimized = true">_</WinButton>
+            <WinButton disabled>□</WinButton>
+            <WinButton disabled>×</WinButton>
           </div>
         </div>
 
@@ -138,14 +138,14 @@
               <span>{{ pos.coin }}</span>
               <div class="flex items-center gap-2">
                 <span>{{ pos.statusLabel }}</span>
-                <button 
+                <WinButton 
                   v-if="pos.statusLabel === 'In progress' && pos.coin !== '***'"
-                  class="win-btn close-pos-btn"
+                  variant="close-pos"
                   :disabled="ownCard.isBusy"
                   @click="closePosition(ownCard, pos.positionId)"
                 >
                   Close
-                </button>
+                </WinButton>
               </div>
             </div>
             <div class="pos-details">
@@ -160,23 +160,23 @@
 
           <!-- Action buttons for own card -->
           <div class="mt-4 flex flex-col gap-2">
-            <button
+            <WinButton
               v-if="ownCard.positions.some(p => p.coin === '***')"
-              class="sub-btn"
+              variant="sub"
               style="background: #2563eb !important;"
               :disabled="!canWrite || ownCard.isBusy"
               @click="refreshAndDecrypt(ownCard)"
             >
               {{ ownCard.isBusy ? "Processing..." : "Decrypt Yourself" }}
-            </button>
+            </WinButton>
 
-            <button
-              class="sub-btn secondary"
+            <WinButton
+              variant="secondary"
               :disabled="!canWrite || ownCard.isBusy"
               @click="refreshAndDecrypt(ownCard)"
             >
               {{ ownCard.isBusy ? "Processing..." : "Refresh (open new positions)" }}
-            </button>
+            </WinButton>
           </div>
 
           <div v-if="ownCard.expiresAt" class="sub-info">
@@ -193,9 +193,9 @@
         <div class="card-header">
           <span>{{ creator.username || 'User' }}.exe</span>
           <div class="window-controls">
-            <button class="win-btn" @click="creator.isMinimized = true">_</button>
-            <button class="win-btn" disabled>□</button>
-            <button class="win-btn close-btn" disabled>×</button>
+            <WinButton @click="creator.isMinimized = true">_</WinButton>
+            <WinButton disabled>□</WinButton>
+            <WinButton disabled>×</WinButton>
           </div>
         </div>
 
@@ -213,9 +213,9 @@
           <!-- Locked overlay (only for non-subscribers AND not own card) -->
           <div v-if="!creator.subscribed && !creator.isOwnCard" class="locked-overlay">
             <div class="lock-icon">🔒</div>
-            <button class="sub-btn" :disabled="!canWrite || creator.isBusy" @click="subscribe(creator)">
+            <WinButton variant="sub" :disabled="!canWrite || creator.isBusy" @click="subscribe(creator)">
               {{ creator.isBusy ? "Processing..." : "Subscribe" }}
-            </button>
+            </WinButton>
             <div class="sub-info">
               {{ canWrite ? `1 month access (${formatEth(creator.monthlyPriceWei)} ETH)` : "Connect wallet to view portfolio" }}
             </div>
@@ -231,14 +231,14 @@
               <span>{{ (creator.subscribed || creator.isOwnCard) ? pos.coin : "***" }}</span>
               <div class="flex items-center gap-2">
                 <span>{{ (creator.subscribed || creator.isOwnCard) ? pos.statusLabel : "***" }}</span>
-                <button 
+                <WinButton 
                   v-if="creator.isOwnCard && pos.statusLabel === 'In progress' && pos.coin !== '***'"
-                  class="win-btn close-pos-btn"
+                  variant="close-pos"
                   :disabled="creator.isBusy"
                   @click="closePosition(creator, pos.positionId)"
                 >
                   Close
-                </button>
+                </WinButton>
               </div>
             </div>
             <div class="pos-details">
@@ -256,35 +256,35 @@
           <!-- Action buttons for subscribed/own cards -->
           <div v-if="creator.subscribed || creator.isOwnCard" class="mt-4 flex flex-col gap-2">
             <!-- Decrypt Yourself button (own card with encrypted data) -->
-            <button
+            <WinButton
               v-if="creator.isOwnCard && creator.positions.some(p => p.coin === '***')"
-              class="sub-btn"
+              variant="sub"
               style="background: #2563eb !important;"
               :disabled="!canWrite || creator.isBusy"
               @click="refreshAndDecrypt(creator)"
             >
               {{ creator.isBusy ? "Processing..." : "Decrypt Yourself" }}
-            </button>
+            </WinButton>
 
             <!-- Start Decryption button (subscribed creator with encrypted data) -->
-            <button
+            <WinButton
               v-else-if="!creator.isOwnCard && creator.positions.some(p => p.coin === '***')"
-              class="sub-btn"
+              variant="sub"
               style="background: #9333ea !important;"
               :disabled="!canWrite || creator.isBusy"
               @click="refreshAndDecrypt(creator)"
             >
               {{ creator.isBusy ? "Processing..." : "Start Decryption" }}
-            </button>
+            </WinButton>
 
             <!-- Refresh button (always available for subscribed/own cards) -->
-            <button
-              class="sub-btn secondary"
+            <WinButton
+              variant="secondary"
               :disabled="!canWrite || creator.isBusy"
               @click="refreshAndDecrypt(creator)"
             >
               {{ creator.isBusy ? "Processing..." : "Refresh (open new positions)" }}
-            </button>
+            </WinButton>
           </div>
 
           <div v-if="(creator.subscribed || creator.isOwnCard) && creator.expiresAt" class="sub-info">
@@ -311,7 +311,7 @@
       <div class="card-header">
         <span>HowToUse.txt - Notepad</span>
         <div class="window-controls">
-          <button class="win-btn" @click="showHelp = false">×</button>
+          <WinButton @click="showHelp = false">×</WinButton>
         </div>
       </div>
       <div class="notepad-content">
@@ -335,6 +335,7 @@ import { useWalletVue, useFhevmVue, getFheInstance, batchDecryptValues } from ".
 import AppHeader from "./AppHeader.vue";
 import Taskbar from "./Taskbar.vue";
 import SortControls from "./SortControls.vue";
+import WinButton from "./WinButton.vue";
 import { CONTRACT_ADDRESSES, SEPOLIA_CONFIG, SOCIAL_ABI } from "../constants";
 import type { PositionView, CreatorCard } from "../types";
 

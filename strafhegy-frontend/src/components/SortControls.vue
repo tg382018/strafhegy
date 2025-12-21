@@ -2,32 +2,36 @@
   <div class="sort-controls">
     <div class="sort-label">Sort by:</div>
     <div class="sort-buttons">
-      <button 
-        class="win-btn sort-btn" 
+      <WinButton 
+        variant="sub" 
+        class="sort-btn" 
         :class="{ active: modelValue === 'subscribers' }"
         @click="$emit('update:modelValue', 'subscribers')"
       >
         👥 Most Subscribers
-      </button>
-      <button 
-        class="win-btn sort-btn" 
+      </WinButton>
+      <WinButton 
+        variant="sub" 
+        class="sort-btn" 
         :class="{ active: modelValue === 'newest' }"
         @click="$emit('update:modelValue', 'newest')"
       >
         ✨ Newest
-      </button>
-      <button 
-        class="win-btn sort-btn" 
+      </WinButton>
+      <WinButton 
+        variant="sub" 
+        class="sort-btn" 
         :class="{ active: modelValue === 'oldest' }"
         @click="$emit('update:modelValue', 'oldest')"
       >
         📜 Oldest
-      </button>
+      </WinButton>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import WinButton from "./WinButton.vue";
 defineProps<{
   modelValue: 'newest' | 'oldest' | 'subscribers';
 }>();

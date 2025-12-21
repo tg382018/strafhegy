@@ -69,33 +69,10 @@
   font-size: 13px;
 }
 
+
 .window-controls {
   display: flex;
   gap: 2px;
-}
-
-.win-btn {
-  width: 16px;
-  height: 14px;
-  background: var(--win-grey);
-  border: 1px solid;
-  border-color: var(--win-border-light) var(--win-border-dark) var(--win-border-dark) var(--win-border-light);
-  font-size: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  padding: 0;
-  font-weight: bold;
-  color: #000;
-}
-.win-btn:active:not(:disabled) {
-  border-color: var(--win-border-dark) var(--win-border-light) var(--win-border-light) var(--win-border-dark);
-  padding: 1px 0 0 1px;
-}
-.win-btn:disabled {
-  color: var(--win-border-dark);
-  cursor: default;
 }
 
 .profile-section {
@@ -191,6 +168,7 @@
   flex-direction: column;
   gap: 8px;
 }
+
 .field {
   display: flex;
   flex-direction: column;
@@ -217,23 +195,6 @@
   margin-bottom: 10px;
 }
 
-.sub-btn {
-  background: var(--win-grey) !important;
-  color: #000;
-  border: 1px solid var(--win-border-black);
-  box-shadow: inset 1px 1px var(--win-border-light), 1px 1px var(--win-border-dark);
-  padding: 4px 12px;
-  font-size: 12px;
-  cursor: pointer;
-}
-.sub-btn:active:not(:disabled) {
-  box-shadow: inset 1px 1px var(--win-border-dark), 1px 1px var(--win-border-light);
-  padding: 5px 11px 3px 13px;
-}
-.sub-btn:disabled {
-  color: var(--win-border-dark);
-  text-shadow: 1px 1px var(--win-border-light);
-}
 
 .value {
   font-weight: bold;
@@ -283,6 +244,7 @@
   font-size: 11px;
   cursor: pointer;
 }
+
 .start-btn:active {
   box-shadow: inset 1px 1px var(--win-border-dark), 1px 1px var(--win-border-light);
 }
@@ -306,24 +268,6 @@
   overflow-x: auto;
 }
 
-.taskbar-item {
-  height: 22px;
-  min-width: 100px;
-  max-width: 160px;
-  background: var(--win-grey);
-  border: 1px solid var(--win-border-black);
-  box-shadow: inset 1px 1px var(--win-border-light), 1px 1px var(--win-border-dark);
-  font-size: 11px;
-  text-align: left;
-  padding: 0 8px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  cursor: pointer;
-}
-.taskbar-item:active {
-  box-shadow: inset 1px 1px var(--win-border-dark), 1px 1px var(--win-border-light);
-}
 
 .taskbar-clock {
   height: 22px;
@@ -406,19 +350,6 @@
   margin: 0 0 8px 0;
 }
 
-.close-pos-btn {
-  padding: 0 8px;
-  width: auto;
-  height: 18px;
-  font-size: 10px;
-  background: #ff000022 !important;
-  color: #cc0000;
-  border-color: #cc0000 !important;
-}
-
-.close-pos-btn:hover:not(:disabled) {
-  background: #ff000044 !important;
-}
 
 .search-container {
   margin-right: 10px;

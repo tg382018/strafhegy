@@ -8,17 +8,17 @@
     <div class="taskbar-divider"></div>
     
     <div class="taskbar-items">
-      <button v-if="myPanelMinimized" class="taskbar-item" @click="$emit('restorePanel')">
+      <WinButton v-if="myPanelMinimized" variant="taskbar-item" @click="$emit('restorePanel')">
         Creator.exe
-      </button>
-      <button 
+      </WinButton>
+      <WinButton 
         v-for="c in minimizedCreators" 
         :key="c.address" 
-        class="taskbar-item" 
+        variant="taskbar-item" 
         @click="$emit('restoreCreator', c.address)"
       >
         {{ c.username || 'User' }} ({{ maskAddress(c.address, 3) }})
-      </button>
+      </WinButton>
     </div>
     
     <div class="taskbar-clock">
@@ -28,6 +28,7 @@
 </template>
 
 <script setup lang="ts">
+import WinButton from "./WinButton.vue";
 defineProps<{
   currentTime: string;
   myPanelMinimized: boolean;
