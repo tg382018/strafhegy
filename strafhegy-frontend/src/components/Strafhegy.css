@@ -1,0 +1,440 @@
+/* XP-style look inspired by indx.html */
+/* NOTE: <style scoped> içinde :root genelde beklendiği gibi çalışmadığı için
+   CSS değişkenlerini component root'una taşıyoruz. */
+.page {
+  --win-grey: #c0c0c0;
+  --win-blue: #000080;
+  --win-blue-light: #1084d0;
+  --win-border-light: #ffffff;
+  --win-border-dark: #808080;
+  --win-border-black: #000000;
+  margin: 0;
+  font-family: "MS Sans Serif", "Segoe UI", Tahoma, sans-serif;
+  min-height: 100vh;
+  color: #000;
+  overflow-x: hidden;
+}
+
+.background-mesh {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: -1;
+  background: url('/background.jpeg') no-repeat center center fixed;
+  background-size: cover;
+}
+
+.connect-btn:active {
+  box-shadow: inset 1px 1px var(--win-border-dark), 1px 1px var(--win-border-light);
+  padding: 5px 15px 3px 17px;
+}
+
+.container {
+  max-width: 1400px;
+  margin: 40px auto;
+  padding: 0 20px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 30px;
+  justify-items: center;
+}
+
+.user-card {
+  width: 100%;
+  max-width: 320px;
+  background: var(--win-grey);
+  border: 2px solid;
+  border-color: var(--win-border-light) var(--win-border-dark) var(--win-border-dark) var(--win-border-light);
+  box-shadow: 1px 1px var(--win-border-black);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  padding: 2px;
+}
+
+.creator-panel {
+  max-width: 420px;
+}
+
+.card-header {
+  background: linear-gradient(90deg, var(--win-blue), var(--win-blue-light));
+  padding: 3px 5px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: white;
+  font-weight: bold;
+  font-size: 13px;
+}
+
+.window-controls {
+  display: flex;
+  gap: 2px;
+}
+
+.win-btn {
+  width: 16px;
+  height: 14px;
+  background: var(--win-grey);
+  border: 1px solid;
+  border-color: var(--win-border-light) var(--win-border-dark) var(--win-border-dark) var(--win-border-light);
+  font-size: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  font-weight: bold;
+  color: #000;
+}
+.win-btn:active:not(:disabled) {
+  border-color: var(--win-border-dark) var(--win-border-light) var(--win-border-light) var(--win-border-dark);
+  padding: 1px 0 0 1px;
+}
+.win-btn:disabled {
+  color: var(--win-border-dark);
+  cursor: default;
+}
+
+.profile-section {
+  padding: 15px;
+  text-align: center;
+  background: var(--win-grey);
+}
+
+.avatar {
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 10px;
+  border: 2px solid;
+  border-color: var(--win-border-dark) var(--win-border-light) var(--win-border-light) var(--win-border-dark);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 18px;
+  color: white;
+  background: #808080;
+}
+
+.wallet-address {
+  font-family: "MS Sans Serif", Tahoma, sans-serif;
+  font-size: 11px;
+  color: #000;
+  background: #fff;
+  border: 1px solid;
+  border-color: var(--win-border-dark) var(--win-border-light) var(--win-border-light) var(--win-border-dark);
+  padding: 2px 4px;
+  display: inline-block;
+  width: 100%;
+  box-sizing: border-box;
+  text-align: left;
+}
+
+.subscriber-count {
+  font-size: 11px;
+  color: #000080;
+  font-weight: bold;
+  margin-top: 4px;
+}
+
+.positions-list {
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex-grow: 1;
+  min-height: 300px;
+  background: var(--win-grey);
+}
+
+.pos-item {
+  background: var(--win-grey);
+  border: 1px solid;
+  border-color: var(--win-border-dark) var(--win-border-light) var(--win-border-light) var(--win-border-dark);
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.pos-header {
+  display: flex;
+  justify-content: space-between;
+  font-weight: bold;
+  font-size: 12px;
+  border-bottom: 1px solid var(--win-border-dark);
+  padding-bottom: 2px;
+}
+
+.pos-details {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: #000;
+}
+
+.input {
+  font-size: 12px;
+  padding: 2px 4px;
+  background: #fff;
+  border: 2px solid;
+  border-color: var(--win-border-dark) var(--win-border-light) var(--win-border-light) var(--win-border-dark);
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.fields-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 11px;
+}
+
+.locked-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(192, 192, 192, 0.7);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+}
+
+.lock-icon {
+  font-size: 32px;
+  margin-bottom: 10px;
+}
+
+.sub-btn {
+  background: var(--win-grey) !important;
+  color: #000;
+  border: 1px solid var(--win-border-black);
+  box-shadow: inset 1px 1px var(--win-border-light), 1px 1px var(--win-border-dark);
+  padding: 4px 12px;
+  font-size: 12px;
+  cursor: pointer;
+}
+.sub-btn:active:not(:disabled) {
+  box-shadow: inset 1px 1px var(--win-border-dark), 1px 1px var(--win-border-light);
+  padding: 5px 11px 3px 13px;
+}
+.sub-btn:disabled {
+  color: var(--win-border-dark);
+  text-shadow: 1px 1px var(--win-border-light);
+}
+
+.value {
+  font-weight: bold;
+}
+
+.sub-info {
+  font-size: 10px;
+  color: #000;
+  margin-top: 4px;
+  text-align: center;
+}
+
+.own-card-label {
+  color: #000;
+  font-weight: bold;
+  border: 1px dashed var(--win-border-dark);
+  padding: 2px;
+}
+
+/* Taskbar Styles */
+.taskbar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 28px;
+  background: var(--win-grey);
+  border-top: 2px solid var(--win-border-light);
+  box-shadow: 0 -1px var(--win-border-black);
+  display: flex;
+  align-items: center;
+  padding: 2px;
+  z-index: 1000;
+  gap: 4px;
+}
+
+.start-btn {
+  height: 22px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 6px;
+  background: var(--win-grey);
+  border: 1px solid var(--win-border-black);
+  box-shadow: inset 1px 1px var(--win-border-light), 1px 1px var(--win-border-dark);
+  font-weight: bold;
+  font-size: 11px;
+  cursor: pointer;
+}
+.start-btn:active {
+  box-shadow: inset 1px 1px var(--win-border-dark), 1px 1px var(--win-border-light);
+}
+
+.start-icon {
+  height: 14px;
+}
+
+.taskbar-divider {
+  width: 2px;
+  height: 20px;
+  border-left: 1px solid var(--win-border-dark);
+  border-right: 1px solid var(--win-border-light);
+  margin: 0 2px;
+}
+
+.taskbar-items {
+  display: flex;
+  gap: 4px;
+  flex-grow: 1;
+  overflow-x: auto;
+}
+
+.taskbar-item {
+  height: 22px;
+  min-width: 100px;
+  max-width: 160px;
+  background: var(--win-grey);
+  border: 1px solid var(--win-border-black);
+  box-shadow: inset 1px 1px var(--win-border-light), 1px 1px var(--win-border-dark);
+  font-size: 11px;
+  text-align: left;
+  padding: 0 8px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+}
+.taskbar-item:active {
+  box-shadow: inset 1px 1px var(--win-border-dark), 1px 1px var(--win-border-light);
+}
+
+.taskbar-clock {
+  height: 22px;
+  padding: 0 8px;
+  border: 1px solid;
+  border-color: var(--win-border-dark) var(--win-border-light) var(--win-border-light) var(--win-border-dark);
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  background: var(--win-grey);
+}
+
+/* Animations */
+.user-card {
+  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease, visibility 0.4s;
+  transform-origin: bottom center;
+}
+
+.minimized-anim {
+  transform: translateY(100vh) scale(0.1);
+  opacity: 0;
+  pointer-events: none;
+  visibility: hidden;
+}
+
+/* Adjust container for taskbar */
+.container {
+  padding-bottom: 60px;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.how-to-use-btn {
+  padding: 4px 12px;
+  font-size: 12px;
+  width: auto;
+  height: auto;
+  white-space: nowrap;
+}
+
+.contact-link {
+  text-decoration: none;
+  color: inherit;
+}
+
+/* Notepad Window */
+.notepad-window {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 400px;
+  background: #fff;
+  border: 2px solid;
+  border-color: var(--win-border-light) var(--win-border-dark) var(--win-border-dark) var(--win-border-light);
+  box-shadow: 1px 1px var(--win-border-black);
+  z-index: 2000;
+  display: flex;
+  flex-direction: column;
+}
+
+.notepad-content {
+  padding: 15px;
+  font-family: "Courier New", Courier, monospace;
+  font-size: 13px;
+  color: #000;
+  white-space: pre-wrap;
+  background: #fff;
+  border: 1px solid var(--win-border-dark);
+  margin: 2px;
+  min-height: 200px;
+  overflow-y: auto;
+}
+
+.notepad-content p {
+  margin: 0 0 8px 0;
+}
+
+.close-pos-btn {
+  padding: 0 8px;
+  width: auto;
+  height: 18px;
+  font-size: 10px;
+  background: #ff000022 !important;
+  color: #cc0000;
+  border-color: #cc0000 !important;
+}
+
+.close-pos-btn:hover:not(:disabled) {
+  background: #ff000044 !important;
+}
+
+.search-container {
+  margin-right: 10px;
+}
+
+.search-input {
+  background: white;
+  border: 2px solid;
+  border-color: var(--win-border-dark) var(--win-border-light) var(--win-border-light) var(--win-border-dark);
+  padding: 4px 8px;
+  font-family: inherit;
+  font-size: 12px;
+  width: 250px;
+  outline: none;
+}
+
+.search-input:focus {
+  border-color: var(--win-blue);
+}
