@@ -247,7 +247,7 @@
           class="taskbar-item" 
           @click="c.isMinimized = false"
         >
-          User ({{ maskAddress(c.address, 3) }})
+          {{ c.username || 'User' }} ({{ maskAddress(c.address, 3) }})
         </button>
       </div>
       
@@ -289,7 +289,7 @@ import { useWalletVue, useFhevmVue, getFheInstance, batchDecryptValues } from ".
 
 // Fill this after deploy. We'll also add local hardhat address later.
 const CONTRACT_ADDRESSES: Record<number, string> = {
-  11155111: "0xAab6DA174089692311676632DF30058669B55e33", // Sepolia
+  11155111: "0x9c441bAa4214555FF6CAaE4364Fa055C7665174a", // Sepolia
   31337: "", // Local
 };
 

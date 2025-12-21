@@ -1,9 +1,9 @@
 <template>
-  <SocialFi />
+  <Strafhegy />
 </template>
 
 <script setup lang="ts">
-import SocialFi from "./components/SocialFi.vue";
+import Strafhegy from "./components/Strafhegy.vue";
 </script>
 
 <style></style>
