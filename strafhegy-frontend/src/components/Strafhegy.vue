@@ -123,7 +123,86 @@
       </div>
 
       <!-- Creator cards -->
-      <div v-for="creator in filteredCreators" :key="creator.address" class="user-card" :class="{ 'minimized-anim': creator.isMinimized }">
+      <!-- 2. Own Card (Positions) -->
+      <div v-if="ownCard" class="user-card" :class="{ 'minimized-anim': ownCard.isMinimized }">
+        <div class="card-header">
+          <span>{{ ownCard.username || 'User' }}.exe</span>
+          <div class="window-controls">
+            <button class="win-btn" @click="ownCard.isMinimized = true">_</button>
+            <button class="win-btn" disabled>□</button>
+            <button class="win-btn close-btn" disabled>×</button>
+          </div>
+        </div>
+
+        <div class="profile-section">
+          <div class="avatar" :style="{ backgroundColor: getAvatarColor(ownCard.address) }">
+            <span class="avatar-initials">{{ getInitials(ownCard.address) }}</span>
+          </div>
+          <div class="wallet-address">{{ maskAddress(ownCard.address) }}</div>
+        </div>
+
+        <div class="positions-list">
+          <div
+            v-for="pos in ownCard.positions"
+            :key="pos.positionId"
+            class="pos-item"
+          >
+            <div class="pos-header">
+              <span>{{ pos.coin }}</span>
+              <div class="flex items-center gap-2">
+                <span>{{ pos.statusLabel }}</span>
+                <button 
+                  v-if="pos.statusLabel === 'In progress' && pos.coin !== '***'"
+                  class="win-btn close-pos-btn"
+                  :disabled="ownCard.isBusy"
+                  @click="closePosition(ownCard, pos.positionId)"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+            <div class="pos-details">
+              <span>Expectation: {{ pos.expectationLabel }}</span>
+              <span>Target: {{ pos.target }}</span>
+            </div>
+            <div class="pos-details">
+              <span>Entry: {{ pos.entry }}</span>
+              <span>{{ pos.openedAt }}</span>
+            </div>
+          </div>
+
+          <!-- Action buttons for own card -->
+          <div class="mt-4 flex flex-col gap-2">
+            <button
+              v-if="ownCard.positions.some(p => p.coin === '***')"
+              class="sub-btn"
+              style="background: #2563eb !important;"
+              :disabled="!canWrite || ownCard.isBusy"
+              @click="refreshAndDecrypt(ownCard)"
+            >
+              {{ ownCard.isBusy ? "Processing..." : "Decrypt Yourself" }}
+            </button>
+
+            <button
+              class="sub-btn secondary"
+              :disabled="!canWrite || ownCard.isBusy"
+              @click="refreshAndDecrypt(ownCard)"
+            >
+              {{ ownCard.isBusy ? "Processing..." : "Refresh (open new positions)" }}
+            </button>
+          </div>
+
+          <div v-if="ownCard.expiresAt" class="sub-info">
+            Days left: {{ remainingDaysFromExpiry(ownCard.expiresAt) }}
+          </div>
+          <div v-if="!ownCard.subscribed" class="sub-info own-card-label">
+            This is your card - you can see your positions
+          </div>
+        </div>
+      </div>
+
+      <!-- 3. Other Creators -->
+      <div v-for="creator in otherCreators" :key="creator.address" class="user-card" :class="{ 'minimized-anim': creator.isMinimized }">
         <div class="card-header">
           <span>{{ creator.username || 'User' }}.exe</span>
           <div class="window-controls">
@@ -449,12 +528,15 @@ type CreatorCard = {
 
 const creators = reactive<CreatorCard[]>([]);
 
-const filteredCreators = computed(() => {
+const ownCard = computed(() => creators.find(c => c.isOwnCard));
+
+const otherCreators = computed(() => {
   const query = searchQuery.value.toLowerCase().trim();
   return creators.filter(c => {
+    if (c.isOwnCard) return false;
     // Only show creators with an active profile and at least 1 position
-    if (!c.activeProfile && !c.isOwnCard) return false;
-    if (c.positions.length === 0 && !c.isOwnCard) return false;
+    if (!c.activeProfile) return false;
+    if (c.positions.length === 0) return false;
     
     // Filter by username or address
     if (!query) return true;
