@@ -73,10 +73,7 @@
                 <span>Set monthly fee</span>
                 <span class="value">{{ formatEth(myMonthlyPriceWei) }} ETH</span>
               </div>
-              <div class="pos-details">
-                <span>Days left</span>
-                <span class="value">{{ myRemainingDaysLabel }}</span>
-              </div>
+
               <button class="sub-btn secondary" :disabled="isBusy" @click="startEditProfile">Change monthly fee</button>
             </template>
           </div>
@@ -484,13 +481,7 @@ setInterval(() => {
   currentTime.value = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 }, 1000);
 
-const myRemainingDaysLabel = computed(() => {
-  // UX: kullanıcı "profil oluşturunca" burada 1 aylık modelini görmek istiyor.
-  // Eğer self-subscription varsa onu göster, yoksa 30 gün sabit göster.
-  const exp = mySubscriptionExpiry.value;
-  if (exp && exp > Math.floor(Date.now() / 1000)) return String(remainingDaysFromExpiry(exp));
-  return myProfileReady.value ? "30" : "-";
-});
+
 
 const newPos = reactive({
   coinName: "ETH",
