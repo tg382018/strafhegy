@@ -4,8 +4,7 @@
 
     <header>
       <div class="logo">
-        <span class="logo-xp">XP</span>
-        Strafhegy SocialFi
+        <img  src="/strafhegylogo.png" alt="Strafhegy SocialFi" class="logo-img" />
       </div>
 
       <button class="connect-btn" :class="{ connected: isConnected }" @click="onToggleWallet">
@@ -28,41 +27,41 @@
             <span class="avatar-initials">{{ getInitials(account) }}</span>
           </div>
           <div class="wallet-address">
-            {{ isConnected ? account : "Cüzdan bağla (creator panel)" }}
+            {{ isConnected ? account : "Connect wallet (creator panel)" }}
           </div>
         </div>
         <div class="positions-list">
           <div class="pos-item">
             <div class="pos-header">
-              <span>Profil</span>
-              <span>{{ contractAddress ? "Contract OK" : "Contract gerekli" }}</span>
+              <span>Profile</span>
+              <span>{{ contractAddress ? "Contract OK" : "Contract required" }}</span>
             </div>
             <template v-if="isEditingProfile || !myProfileReady">
               <div class="pos-details">
-                <span>Aylık ücret (ETH)</span>
+                <span>Monthly fee (ETH)</span>
                 <input v-model="creatorPriceEth" class="input" placeholder="0.005" />
               </div>
               <button class="sub-btn" :disabled="!canWrite || isBusy" @click="upsertProfile">
-                {{ isBusy ? "İşleniyor..." : "Profili Kaydet" }}
+                {{ isBusy ? "Processing..." : "Save Profile" }}
               </button>
             </template>
             <template v-else>
               <div class="pos-details">
-                <span>Ayarlanan aylık ücret</span>
+                <span>Set monthly fee</span>
                 <span class="value">{{ formatEth(myMonthlyPriceWei) }} ETH</span>
               </div>
               <div class="pos-details">
-                <span>Kalan gün</span>
+                <span>Days left</span>
                 <span class="value">{{ myRemainingDaysLabel }}</span>
               </div>
-              <button class="sub-btn secondary" :disabled="isBusy" @click="startEditProfile">Aylık ücreti değiştir</button>
+              <button class="sub-btn secondary" :disabled="isBusy" @click="startEditProfile">Change monthly fee</button>
             </template>
           </div>
 
           <div v-if="myProfileReady && !isEditingProfile" class="pos-item">
             <div class="pos-header">
-              <span>Pozisyon Ekle</span>
-              <span>Şifreli</span>
+              <span>Add Position</span>
+              <span>Encrypted</span>
             </div>
             <div class="fields-stack">
               <label class="field">
@@ -70,35 +69,35 @@
                 <input v-model="newPos.coinName" class="input" type="text" placeholder="ETH, BTC, SOL..." />
               </label>
               <label class="field">
-                <span>Beklenti</span>
+                <span>Expectation</span>
                 <select v-model.number="newPos.expectation" class="input">
-                  <option :value="1">Yükseliş</option>
-                  <option :value="0">Düşüş</option>
+                  <option :value="1">Long</option>
+                  <option :value="0">Short</option>
                 </select>
               </label>
               <label class="field">
-                <span>Giriş fiyatı (x100)</span>
+                <span>Entry price (x100)</span>
                 <input v-model.number="newPos.entryPrice" class="input" type="number" placeholder="10000" />
               </label>
               <label class="field">
-                <span>Hedef fiyat (x100)</span>
+                <span>Target price (x100)</span>
                 <input v-model.number="newPos.target" class="input" type="number" placeholder="12000" />
               </label>
             </div>
             <button class="sub-btn" :disabled="!canWrite || isBusy" @click="addPosition">
-              {{ isBusy ? "İşleniyor..." : "Pozisyon Ekle" }}
+              {{ isBusy ? "Processing..." : "Add Position" }}
             </button>
             <div class="sub-info">
-              Pozisyon oluşturulduğunda durum otomatik "Devam ediyor" olur.
+              Status is automatically set to "In progress" when a position is created.
             </div>
           </div>
 
           <div v-else class="pos-item">
             <div class="pos-header">
-              <span>Pozisyon Ekle</span>
-              <span>Kilitli</span>
+              <span>Add Position</span>
+              <span>Locked</span>
             </div>
-            <div class="sub-info">Pozisyon eklemek için önce profilini oluştur (aylık ücretini kaydet).</div>
+            <div class="sub-info">Create your profile (save monthly fee) first to add positions.</div>
           </div>
         </div>
       </div>
@@ -125,10 +124,10 @@
           <div v-if="!creator.subscribed && !creator.isOwnCard" class="locked-overlay">
             <div class="lock-icon">🔒</div>
             <button class="sub-btn" :disabled="!canWrite || creator.isBusy" @click="subscribe(creator)">
-              {{ creator.isBusy ? "İşleniyor..." : "Abone Ol" }}
+              {{ creator.isBusy ? "Processing..." : "Subscribe" }}
             </button>
             <div class="sub-info">
-              {{ canWrite ? `1 ay erişim (${formatEth(creator.monthlyPriceWei)} ETH)` : "Portföyü görmek için cüzdan bağla" }}
+              {{ canWrite ? `1 month access (${formatEth(creator.monthlyPriceWei)} ETH)` : "Connect wallet to view portfolio" }}
             </div>
           </div>
 
@@ -143,12 +142,14 @@
               <span>{{ (creator.subscribed || creator.isOwnCard) ? pos.statusLabel : "***" }}</span>
             </div>
             <div class="pos-details">
-              <span>Beklenti: {{ (creator.subscribed || creator.isOwnCard) ? pos.expectationLabel : "***" }}</span>
-              <span>Hedef: {{ (creator.subscribed || creator.isOwnCard) ? pos.target : "***" }}</span>
+            <div class="pos-details">
+              <span>Expectation: {{ (creator.subscribed || creator.isOwnCard) ? pos.expectationLabel : "***" }}</span>
+              <span>Target: {{ (creator.subscribed || creator.isOwnCard) ? pos.target : "***" }}</span>
             </div>
             <div class="pos-details">
-              <span>Giriş: {{ (creator.subscribed || creator.isOwnCard) ? pos.entry : "***" }}</span>
+              <span>Entry: {{ (creator.subscribed || creator.isOwnCard) ? pos.entry : "***" }}</span>
               <span>{{ (creator.subscribed || creator.isOwnCard) ? pos.openedAt : "***" }}</span>
+            </div>
             </div>
           </div>
 
@@ -162,7 +163,7 @@
               :disabled="!canWrite || creator.isBusy"
               @click="refreshAndDecrypt(creator)"
             >
-              {{ creator.isBusy ? "İşleniyor..." : "Decrypt Yourself" }}
+              {{ creator.isBusy ? "Processing..." : "Decrypt Yourself" }}
             </button>
 
             <!-- Start Decryption button (subscribed creator with encrypted data) -->
@@ -173,7 +174,7 @@
               :disabled="!canWrite || creator.isBusy"
               @click="refreshAndDecrypt(creator)"
             >
-              {{ creator.isBusy ? "İşleniyor..." : "Start Decryption" }}
+              {{ creator.isBusy ? "Processing..." : "Start Decryption" }}
             </button>
 
             <!-- Refresh button (always available for subscribed/own cards) -->
@@ -182,15 +183,15 @@
               :disabled="!canWrite || creator.isBusy"
               @click="refreshAndDecrypt(creator)"
             >
-              {{ creator.isBusy ? "İşleniyor..." : "Refresh (yeni pozisyonları aç)" }}
+              {{ creator.isBusy ? "Processing..." : "Refresh (open new positions)" }}
             </button>
           </div>
 
           <div v-if="(creator.subscribed || creator.isOwnCard) && creator.expiresAt" class="sub-info">
-            Kalan gün: {{ remainingDaysFromExpiry(creator.expiresAt) }}
+            Days left: {{ remainingDaysFromExpiry(creator.expiresAt) }}
           </div>
           <div v-if="creator.isOwnCard && !creator.subscribed" class="sub-info own-card-label">
-            Bu senin kartın - pozisyonlarını görebilirsin
+            This is your card - you can see your positions
           </div>
         </div>
       </div>
@@ -310,7 +311,7 @@ const contractAddress = computed(() => {
 });
 
 const connectLabel = computed(() => {
-  if (!isConnected.value) return "Cüzdan Bağla";
+  if (!isConnected.value) return "Connect Wallet";
   return `${account.value.slice(0, 6)}...${account.value.slice(-4)}`;
 });
 
@@ -421,11 +422,11 @@ function coinToCode(name: string): number {
 }
 
 function expectationLabel(v: number) {
-  return v === 1 ? "Yükseliş" : "Düşüş";
+  return v === 1 ? "Long" : "Short";
 }
 
 function statusLabel(v: number) {
-  return v === 1 ? "Kapatıldı" : "Devam ediyor";
+  return v === 1 ? "Closed" : "In progress";
 }
 
 function fmtDate(sec: number) {
@@ -735,7 +736,7 @@ async function subscribe(c: CreatorCard) {
     // await decryptCreatorPositions(read, c);
   } catch (e: any) {
     console.error(e);
-    alert(`Abonelik başarısız: ${e?.message ?? e}`);
+    alert(`Subscription failed: ${e?.message ?? e}`);
   } finally {
     c.isBusy = false;
   }
@@ -767,7 +768,7 @@ async function refreshAndDecrypt(c: CreatorCard) {
     await decryptCreatorPositions(read, c);
   } catch (e: any) {
     console.error(e);
-    alert(`Refresh başarısız: ${e?.message ?? e}`);
+    alert(`Refresh failed: ${e?.message ?? e}`);
   } finally {
     c.isBusy = false;
   }
@@ -832,7 +833,7 @@ async function upsertProfile() {
     isEditingProfile.value = false;
   } catch (e) {
     console.error("upsertProfile failed:", e);
-    alert("Profil kaydedilemedi: " + e);
+    alert("Failed to save profile: " + e);
   } finally {
     isBusy.value = false;
   }
@@ -841,7 +842,7 @@ async function upsertProfile() {
 async function addPosition() {
   if (!canWrite.value) return;
   if (!myProfileReady.value) {
-    alert("Önce profilini oluştur (aylık ücretini kaydet), sonra pozisyon ekleyebilirsin.");
+    alert("Create your profile (save monthly fee) first, then you can add positions.");
     return;
   }
   isBusy.value = true;
@@ -907,7 +908,7 @@ async function addPosition() {
     console.log("addPosition flow complete.");
   } catch (e: any) {
     console.error("addPosition failed:", e);
-    alert(`Pozisyon ekleme başarısız: ${e?.message ?? e}`);
+    alert(`Failed to add position: ${e?.message ?? e}`);
   } finally {
     isBusy.value = false;
   }
@@ -973,20 +974,14 @@ header {
 }
 
 .logo {
-  font-weight: 800;
-  font-size: 24px;
-  color: white;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
   display: flex;
   align-items: center;
-  gap: 10px;
 }
 
-.logo-xp {
-  background: white;
-  color: #0050ef;
-  padding: 0 8px;
-  border-radius: 4px;
+.logo-img {
+  height: 80px;
+  width: auto;
+  display: block;
 }
 
 .connect-btn {
