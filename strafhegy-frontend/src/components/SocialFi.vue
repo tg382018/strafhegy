@@ -154,7 +154,17 @@
           >
             <div class="pos-header">
               <span>{{ (creator.subscribed || creator.isOwnCard) ? pos.coin : "***" }}</span>
-              <span>{{ (creator.subscribed || creator.isOwnCard) ? pos.statusLabel : "***" }}</span>
+              <div class="flex items-center gap-2">
+                <span>{{ (creator.subscribed || creator.isOwnCard) ? pos.statusLabel : "***" }}</span>
+                <button 
+                  v-if="creator.isOwnCard && pos.statusLabel === 'In progress' && pos.coin !== '***'"
+                  class="win-btn close-pos-btn"
+                  :disabled="creator.isBusy"
+                  @click="closePosition(creator, pos.positionId)"
+                >
+                  Close
+                </button>
+              </div>
             </div>
             <div class="pos-details">
             <div class="pos-details">
@@ -273,7 +283,7 @@ import { useWalletVue, useFhevmVue, getFheInstance, batchDecryptValues } from ".
 
 // Fill this after deploy. We'll also add local hardhat address later.
 const CONTRACT_ADDRESSES: Record<number, string> = {
-  11155111: "0x5F2328c6a961d845f5c55Dd098A71CbD954f9A63", // Sepolia (updated with getAllCreators)
+  11155111: "0xf847A80a2f97cBc13bdD5F17f6D2ca8A982F78B7", // Sepolia
   31337: "", // Local
 };
 
@@ -356,6 +366,18 @@ const SOCIAL_ABI = [
   { name: "subscribe", type: "function", stateMutability: "payable", inputs: [{ name: "creator", type: "address" }], outputs: [] },
   { name: "refreshAccess", type: "function", stateMutability: "nonpayable", inputs: [{ name: "creator", type: "address" }], outputs: [] },
   { name: "grantAccess", type: "function", stateMutability: "nonpayable", inputs: [{ name: "creator", type: "address" }, { name: "positionIds", type: "uint256[]" }], outputs: [] },
+  {
+    name: "updatePositionStatus",
+    type: "function",
+    stateMutability: "nonpayable",
+    inputs: [
+      { name: "positionId", type: "uint256" },
+      { name: "statusEnc", type: "bytes32" },
+      { name: "deadline", type: "uint256" },
+      { name: "inputProof", type: "bytes" },
+    ],
+    outputs: [],
+  },
   { name: "getCreatorCount", type: "function", stateMutability: "view", inputs: [], outputs: [{ name: "", type: "uint256" }] },
   { name: "getCreatorAt", type: "function", stateMutability: "view", inputs: [{ name: "index", type: "uint256" }], outputs: [{ name: "", type: "address" }] },
   { name: "getAllCreators", type: "function", stateMutability: "view", inputs: [], outputs: [{ name: "", type: "address[]" }] },
@@ -476,9 +498,9 @@ function getInitials(address: string): string {
 
 function formatEth(wei: bigint) {
   try {
-    return Number(ethers.formatEther(wei)).toFixed(3);
+    return Number(ethers.formatEther(wei)).toFixed(5);
   } catch {
-    return "0.000";
+    return "0.00000";
   }
 }
 
@@ -813,6 +835,47 @@ async function decryptCreatorPositions(read: any, c: CreatorCard, retryCount = 0
     // For other errors or max retries, log and keep placeholder positions
     console.warn("Failed to decrypt positions for", c.address, error?.message || error);
     // Keep existing placeholder positions
+  }
+}
+
+async function closePosition(creator: CreatorCard, positionId: number) {
+  if (!canWrite.value) return;
+  creator.isBusy = true;
+  try {
+    const write = await getWriteContract();
+    const nowSec = Math.floor(Date.now() / 1000);
+    const deadline = nowSec + 300;
+
+    console.log(`Closing position ${positionId}...`);
+    const enc = await encryptMany32(contractAddress.value, account.value, [1]); // 1 = Closed
+    
+    const tx = await write.updatePositionStatus(
+      positionId,
+      enc.handles[0],
+      deadline,
+      enc.inputProof,
+      { gasLimit: 5000000 }
+    );
+    await tx.wait();
+    console.log("Position closed!");
+
+    // Give FHEVM relayer time to process permissions
+    await new Promise((resolve) => setTimeout(resolve, 3000));
+    
+    // Refresh data
+    const read = await getReadContract();
+    await hydrateCreator(read, creator);
+    
+    // Clear cache to force re-decryption
+    cacheClear(creator.address);
+    
+    alert("Position closed successfully!");
+  } catch (e: any) {
+    console.error("closePosition failed detail:", e);
+    const msg = e?.message || (typeof e === 'object' ? JSON.stringify(e) : String(e));
+    alert("Failed to close position: " + msg);
+  } finally {
+    creator.isBusy = false;
   }
 }
 
@@ -1547,6 +1610,20 @@ header {
 
 .notepad-content p {
   margin: 0 0 8px 0;
+}
+
+.close-pos-btn {
+  padding: 0 8px;
+  width: auto;
+  height: 18px;
+  font-size: 10px;
+  background: #ff000022 !important;
+  color: #cc0000;
+  border-color: #cc0000 !important;
+}
+
+.close-pos-btn:hover:not(:disabled) {
+  background: #ff000044 !important;
 }
 </style>
 

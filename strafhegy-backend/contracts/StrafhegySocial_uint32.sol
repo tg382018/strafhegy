@@ -125,6 +125,7 @@ contract StrafhegySocial_uint32 is ZamaEthereumConfig {
 
         euint32 st = FHE.fromExternal(statusEnc, inputProof);
         _positions[msg.sender][positionId].status = st;
+        FHE.allowThis(st);
         FHE.allow(st, msg.sender);
 
         emit PositionStatusUpdated(msg.sender, positionId);
