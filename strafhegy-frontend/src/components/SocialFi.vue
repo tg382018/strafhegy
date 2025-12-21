@@ -4,22 +4,36 @@
 
     <header>
       <div class="logo">
-        <img  src="/strafhegylogo.png" alt="Strafhegy SocialFi" class="logo-img" />
+        <div class="straf-logo-component">
+          <div class="straf-icon-box">
+            <div class="straf-dots"></div>
+            <div class="straf-hex-outer"></div>
+            <div class="straf-hex-inner"></div>
+          </div>
+          <div class="straf-text-box">
+            <span class="straf-title">strafhegy</span>
+            <span class="straf-subtitle">FHEVM</span>
+          </div>
+        </div>
       </div>
 
-      <button class="connect-btn" :class="{ connected: isConnected }" @click="onToggleWallet">
-        {{ connectLabel }}
-      </button>
+      <div class="header-actions">
+        <button class="win-btn how-to-use-btn" @click="showHelp = true">How to Use</button>
+        <button class="connect-btn" :class="{ connected: isConnected }" @click="onToggleWallet">
+          {{ connectLabel }}
+        </button>
+      </div>
     </header>
 
     <div class="container">
       <!-- Creator panel (for testing / demo) -->
-      <div class="user-card creator-panel">
+      <div class="user-card creator-panel" :class="{ 'minimized-anim': myPanelMinimized }">
         <div class="card-header">
           <span>Creator.exe</span>
           <div class="window-controls">
-            <span class="dot dot-yellow"></span>
-            <span class="dot dot-green"></span>
+            <button class="win-btn" @click="myPanelMinimized = true">_</button>
+            <button class="win-btn" disabled>□</button>
+            <button class="win-btn close-btn" disabled>×</button>
           </div>
         </div>
         <div class="profile-section">
@@ -103,12 +117,13 @@
       </div>
 
       <!-- Creator cards -->
-      <div v-for="creator in creators" :key="creator.address" class="user-card">
+      <div v-for="creator in creators" :key="creator.address" class="user-card" :class="{ 'minimized-anim': creator.isMinimized }">
         <div class="card-header">
           <span>User.exe</span>
           <div class="window-controls">
-            <span class="dot dot-yellow"></span>
-            <span class="dot dot-green"></span>
+            <button class="win-btn" @click="creator.isMinimized = true">_</button>
+            <button class="win-btn" disabled>□</button>
+            <button class="win-btn close-btn" disabled>×</button>
           </div>
         </div>
 
@@ -194,6 +209,54 @@
             This is your card - you can see your positions
           </div>
         </div>
+      </div>
+    </div>
+
+    <!-- Windows 98 Taskbar -->
+    <div class="taskbar">
+      <a href="mailto:tgulck@gmail.com" class="start-btn contact-link">
+        <img src="/strafhegylogo.png" class="start-icon" />
+        <span>Contact</span>
+      </a>
+      
+      <div class="taskbar-divider"></div>
+      
+      <div class="taskbar-items">
+        <button v-if="myPanelMinimized" class="taskbar-item" @click="myPanelMinimized = false">
+          Creator.exe
+        </button>
+        <button 
+          v-for="c in creators.filter(cr => cr.isMinimized)" 
+          :key="c.address" 
+          class="taskbar-item" 
+          @click="c.isMinimized = false"
+        >
+          User ({{ maskAddress(c.address, 3) }})
+        </button>
+      </div>
+      
+      <div class="taskbar-clock">
+        {{ currentTime }}
+      </div>
+    </div>
+
+    <!-- Notepad Help Window -->
+    <div v-if="showHelp" class="notepad-window">
+      <div class="card-header">
+        <span>HowToUse.txt - Notepad</span>
+        <div class="window-controls">
+          <button class="win-btn" @click="showHelp = false">×</button>
+        </div>
+      </div>
+      <div class="notepad-content">
+        <p>Welcome to Strafhegy SocialFi!</p>
+        <p>1. Connect your wallet using the button in the top right.</p>
+        <p>2. If you are a creator, set your monthly fee and save your profile.</p>
+        <p>3. Add your trading positions (they will be encrypted on-chain!).</p>
+        <p>4. Users can subscribe to your profile to decrypt and see your positions.</p>
+        <p>5. Use the taskbar to manage your open windows.</p>
+        <p>--------------------------------------------------</p>
+        <p>For support: tgulck@gmail.com</p>
       </div>
     </div>
   </div>
@@ -343,6 +406,7 @@ type CreatorCard = {
   isOwnCard: boolean; // true if this is the connected user's own card
   expiresAt?: number;
   isBusy?: boolean;
+  isMinimized?: boolean;
   positions: PositionView[];
 };
 
@@ -354,6 +418,14 @@ const myProfileReady = ref(false);
 const isEditingProfile = ref(true);
 const myMonthlyPriceWei = ref<bigint>(0n);
 const mySubscriptionExpiry = ref<number>(0);
+const myPanelMinimized = ref(false);
+const showHelp = ref(false);
+
+const currentTime = ref("");
+setInterval(() => {
+  const now = new Date();
+  currentTime.value = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}, 1000);
 
 const myRemainingDaysLabel = computed(() => {
   // UX: kullanıcı "profil oluşturunca" burada 1 aylık modelini görmek istiyor.
@@ -444,7 +516,8 @@ function remainingDaysFromExpiry(expirySec: number) {
 }
 
 function cacheKey(creator: string) {
-  return `strafhegy_cache_${chainId.value}_${creator.toLowerCase()}`;
+  const viewer = account.value ? account.value.toLowerCase() : "guest";
+  return `strafhegy_cache_${chainId.value}_${viewer}_${creator.toLowerCase()}`;
 }
 
 function cacheRead(creator: string) {
@@ -700,7 +773,12 @@ async function decryptCreatorPositions(read: any, c: CreatorCard, retryCount = 0
     }
 
     c.positions = positions;
-    cacheWrite(c.address, { expiresAt: c.expiresAt ?? Math.floor(Date.now() / 1000) + 3600, positions });
+    // For own cards, c.expiresAt might be 0, so we set a default 1-hour cache life
+    const cacheExpiry = (c.expiresAt && c.expiresAt > Math.floor(Date.now() / 1000)) 
+      ? c.expiresAt 
+      : Math.floor(Date.now() / 1000) + 3600;
+    
+    cacheWrite(c.address, { expiresAt: cacheExpiry, positions });
   } catch (error: any) {
     // If authorization error and own card, retry after short delay (FHEVM needs time to process FHE.allow)
     if (
@@ -935,16 +1013,16 @@ onMounted(async () => {
 /* NOTE: <style scoped> içinde :root genelde beklendiği gibi çalışmadığı için
    CSS değişkenlerini component root'una taşıyoruz. */
 .page {
-  --xp-blue: #0050ef;
-  --xp-bar-grad-start: #2b7de0;
-  --xp-bar-grad-end: #174eb6;
-  --bg-glass: rgba(255, 255, 255, 0.9);
-  --shadow-lg: 0 10px 25px -5px rgba(0, 0, 0, 0.2), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  --win-grey: #c0c0c0;
+  --win-blue: #000080;
+  --win-blue-light: #1084d0;
+  --win-border-light: #ffffff;
+  --win-border-dark: #808080;
+  --win-border-black: #000000;
   margin: 0;
-  font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-  background: linear-gradient(135deg, #286ed6 0%, #6da6e2 100%);
+  font-family: "MS Sans Serif", "Segoe UI", Tahoma, sans-serif;
   min-height: 100vh;
-  color: #333;
+  color: #000;
   overflow-x: hidden;
 }
 
@@ -955,8 +1033,7 @@ onMounted(async () => {
   width: 100vw;
   height: 100vh;
   z-index: -1;
-  background: radial-gradient(circle at 10% 20%, rgba(255, 255, 255, 0.2) 0%, transparent 20%),
-    radial-gradient(circle at 90% 80%, rgba(0, 255, 100, 0.1) 0%, transparent 25%);
+  background: url('/background.jpeg') no-repeat center center fixed;
   background-size: cover;
 }
 
@@ -964,10 +1041,10 @@ header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 20px 40px;
-  backdrop-filter: blur(10px);
-  background: rgba(255, 255, 255, 0.1);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  padding: 10px 20px;
+  background: var(--win-grey);
+  border-bottom: 2px solid var(--win-border-dark);
+  box-shadow: inset 1px 1px var(--win-border-light);
   position: sticky;
   top: 0;
   z-index: 100;
@@ -978,32 +1055,110 @@ header {
   align-items: center;
 }
 
-.logo-img {
-  height: 80px;
-  width: auto;
-  display: block;
+/* Strafhegy Logo Component Styles */
+.straf-logo-component {
+  --logo-scale: 0.6; 
+  --primary-color: #00f3ff;
+  --secondary-color: #bc13fe;
+  --text-color: #ffffff;
+  
+  display: inline-flex;
+  align-items: center;
+  gap: calc(15px * var(--logo-scale));
+  font-family: 'Orbitron', sans-serif;
+  background: transparent;
+  user-select: none;
+  cursor: pointer;
+  padding: 5px;
+}
+
+.straf-icon-box {
+  position: relative;
+  width: calc(50px * var(--logo-scale));
+  height: calc(50px * var(--logo-scale));
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.straf-hex-outer {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border: calc(3px * var(--logo-scale)) solid var(--primary-color);
+  clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+  animation: strafSpin 10s linear infinite;
+  box-shadow: 0 0 calc(10px * var(--logo-scale)) rgba(0, 243, 255, 0.4);
+}
+
+.straf-hex-inner {
+  position: absolute;
+  width: 55%;
+  height: 55%;
+  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+  clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+  animation: strafPulse 3s ease-in-out infinite alternate;
+}
+
+.straf-dots {
+  position: absolute;
+  width: 140%;
+  height: 140%;
+  border-radius: 50%;
+  border: 1px dashed rgba(255, 255, 255, 0.2);
+  animation: strafSpinReverse 15s linear infinite;
+}
+
+.straf-text-box {
+  display: flex;
+  flex-direction: column;
+  line-height: 1;
+}
+
+.straf-title {
+  font-size: calc(28px * var(--logo-scale));
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: calc(1px * var(--logo-scale));
+  background: linear-gradient(90deg, #fff, var(--primary-color));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 0 calc(10px * var(--logo-scale)) rgba(0, 243, 255, 0.3);
+}
+
+.straf-subtitle {
+  font-size: calc(10px * var(--logo-scale));
+  color: var(--secondary-color);
+  letter-spacing: calc(3px * var(--logo-scale));
+  margin-left: 2px;
+  font-weight: 600;
+}
+
+@keyframes strafSpin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+@keyframes strafSpinReverse {
+  0% { transform: rotate(360deg); }
+  100% { transform: rotate(0deg); }
+}
+@keyframes strafPulse {
+  0% { opacity: 0.8; transform: scale(0.9); }
+  100% { opacity: 1; transform: scale(1.1); box-shadow: 0 0 15px var(--secondary-color); }
 }
 
 .connect-btn {
-  background: #111;
-  border: 1px solid #000;
-  padding: 10px 24px;
-  border-radius: 8px;
-  font-weight: 600;
-  color: #fff;
+  background: var(--win-grey);
+  border: 1px solid var(--win-border-black);
+  box-shadow: inset 1px 1px var(--win-border-light), 1px 1px var(--win-border-dark);
+  padding: 4px 16px;
+  font-weight: 400;
+  color: #000;
   cursor: pointer;
-  transition: all 0.2s;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
 }
-.connect-btn:hover {
-  transform: translateY(-2px);
-  background: #000;
-  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.35);
-}
-.connect-btn.connected {
-  background: #000;
-  color: #fff;
-  border-color: #000;
+.connect-btn:active {
+  box-shadow: inset 1px 1px var(--win-border-dark), 1px 1px var(--win-border-light);
+  padding: 5px 15px 3px 17px;
 }
 
 .container {
@@ -1011,7 +1166,7 @@ header {
   margin: 40px auto;
   padding: 0 20px;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
   gap: 30px;
   justify-items: center;
 }
@@ -1019,148 +1174,151 @@ header {
 .user-card {
   width: 100%;
   max-width: 320px;
-  background: var(--bg-glass);
-  border-radius: 12px;
-  overflow: hidden;
-  box-shadow: var(--shadow-lg);
-  border: 1px solid rgba(255, 255, 255, 0.5);
+  background: var(--win-grey);
+  border: 2px solid;
+  border-color: var(--win-border-light) var(--win-border-dark) var(--win-border-dark) var(--win-border-light);
+  box-shadow: 1px 1px var(--win-border-black);
   display: flex;
   flex-direction: column;
-  transition: transform 0.3s ease;
   position: relative;
+  padding: 2px;
 }
-.user-card:hover {
-  transform: translateY(-5px);
-}
+
 .creator-panel {
   max-width: 420px;
 }
 
 .card-header {
-  background: linear-gradient(180deg, var(--xp-bar-grad-start) 0%, var(--xp-bar-grad-end) 100%);
-  padding: 12px 16px;
+  background: linear-gradient(90deg, var(--win-blue), var(--win-blue-light));
+  padding: 3px 5px;
   display: flex;
   justify-content: space-between;
   align-items: center;
   color: white;
-  border-bottom: 2px solid #ff9933;
+  font-weight: bold;
+  font-size: 13px;
 }
 
-.window-controls .dot {
-  display: inline-block;
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  margin-left: 6px;
-  background-color: rgba(255, 255, 255, 0.3);
+.window-controls {
+  display: flex;
+  gap: 2px;
 }
-.dot-yellow {
-  background: #ffbd2e !important;
+
+.win-btn {
+  width: 16px;
+  height: 14px;
+  background: var(--win-grey);
+  border: 1px solid;
+  border-color: var(--win-border-light) var(--win-border-dark) var(--win-border-dark) var(--win-border-light);
+  font-size: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  font-weight: bold;
+  color: #000;
 }
-.dot-green {
-  background: #27c93f !important;
+.win-btn:active:not(:disabled) {
+  border-color: var(--win-border-dark) var(--win-border-light) var(--win-border-light) var(--win-border-dark);
+  padding: 1px 0 0 1px;
+}
+.win-btn:disabled {
+  color: var(--win-border-dark);
+  cursor: default;
 }
 
 .profile-section {
-  padding: 20px;
+  padding: 15px;
   text-align: center;
-  border-bottom: 1px solid #eee;
-  background: #fdfdfd;
+  background: var(--win-grey);
 }
 
 .avatar {
-  width: 70px;
-  height: 70px;
-  border-radius: 50%;
+  width: 64px;
+  height: 64px;
   margin: 0 auto 10px;
-  border: 3px solid white;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  border: 2px solid;
+  border-color: var(--win-border-dark) var(--win-border-light) var(--win-border-light) var(--win-border-dark);
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: 700;
-  font-size: 20px;
+  font-size: 18px;
   color: white;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  background: #808080;
 }
 
 .wallet-address {
-  font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
-  font-size: 14px;
-  color: #555;
-  background: #eee;
-  padding: 4px 8px;
-  border-radius: 4px;
+  font-family: "MS Sans Serif", Tahoma, sans-serif;
+  font-size: 11px;
+  color: #000;
+  background: #fff;
+  border: 1px solid;
+  border-color: var(--win-border-dark) var(--win-border-light) var(--win-border-light) var(--win-border-dark);
+  padding: 2px 4px;
   display: inline-block;
-  max-width: 95%;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  width: 100%;
+  box-sizing: border-box;
+  text-align: left;
 }
 
 .positions-list {
-  padding: 15px;
+  padding: 10px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
   flex-grow: 1;
   min-height: 300px;
-  position: relative;
+  background: var(--win-grey);
 }
 
 .pos-item {
-  background: white;
-  border: 1px solid #e0e0e0;
-  border-radius: 8px;
-  padding: 12px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  background: var(--win-grey);
+  border: 1px solid;
+  border-color: var(--win-border-dark) var(--win-border-light) var(--win-border-light) var(--win-border-dark);
+  padding: 8px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 5px;
 }
 
 .pos-header {
   display: flex;
   justify-content: space-between;
-  font-weight: 700;
-  font-size: 15px;
+  font-weight: bold;
+  font-size: 12px;
+  border-bottom: 1px solid var(--win-border-dark);
+  padding-bottom: 2px;
 }
 
 .pos-details {
   display: flex;
   justify-content: space-between;
-  font-size: 12px;
-  color: #666;
-  gap: 10px;
-  align-items: center;
+  font-size: 11px;
+  color: #000;
 }
 
 .input {
   font-size: 12px;
-  padding: 6px 8px;
-  border-radius: 6px;
-  border: 1px solid #d0d0d0;
-  width: 140px;
+  padding: 2px 4px;
+  background: #fff;
+  border: 2px solid;
+  border-color: var(--win-border-dark) var(--win-border-light) var(--win-border-light) var(--win-border-dark);
+  width: 100%;
+  box-sizing: border-box;
 }
 
-.grid2 {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-}
 .fields-stack {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 8px;
 }
 .field {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  font-size: 12px;
-  color: #666;
-}
-.field .input {
-  width: 100%;
+  gap: 2px;
+  font-size: 11px;
 }
 
 .locked-overlay {
@@ -1169,64 +1327,206 @@ header {
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(255, 255, 255, 0.6);
-  backdrop-filter: blur(6px);
+  background: rgba(192, 192, 192, 0.7);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  border-radius: 0 0 12px 12px;
   z-index: 10;
 }
 
 .lock-icon {
-  font-size: 40px;
+  font-size: 32px;
   margin-bottom: 10px;
-  color: #888;
 }
 
 .sub-btn {
-  background: #111 !important;
-  color: white;
-  border: none;
-  padding: 10px 20px;
-  border-radius: 20px;
-  font-weight: 600;
+  background: var(--win-grey) !important;
+  color: #000;
+  border: 1px solid var(--win-border-black);
+  box-shadow: inset 1px 1px var(--win-border-light), 1px 1px var(--win-border-dark);
+  padding: 4px 12px;
+  font-size: 12px;
   cursor: pointer;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.25);
-  transition: transform 0.2s;
 }
-.sub-btn:hover {
-  transform: scale(1.03);
-  background: #000 !important;
+.sub-btn:active:not(:disabled) {
+  box-shadow: inset 1px 1px var(--win-border-dark), 1px 1px var(--win-border-light);
+  padding: 5px 11px 3px 13px;
 }
 .sub-btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-.sub-btn.secondary {
-  background: #222 !important;
-  box-shadow: none;
+  color: var(--win-border-dark);
+  text-shadow: 1px 1px var(--win-border-light);
 }
 
 .value {
-  font-weight: 700;
-  color: #111;
+  font-weight: bold;
 }
 
 .sub-info {
-  font-size: 12px;
-  color: #666;
-  margin-top: 6px;
+  font-size: 10px;
+  color: #000;
+  margin-top: 4px;
   text-align: center;
 }
 
 .own-card-label {
-  color: #2e7d32;
-  font-weight: 600;
-  background: #e8f5e9;
-  padding: 4px 8px;
-  border-radius: 4px;
+  color: #000;
+  font-weight: bold;
+  border: 1px dashed var(--win-border-dark);
+  padding: 2px;
+}
+
+/* Taskbar Styles */
+.taskbar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 28px;
+  background: var(--win-grey);
+  border-top: 2px solid var(--win-border-light);
+  box-shadow: 0 -1px var(--win-border-black);
+  display: flex;
+  align-items: center;
+  padding: 2px;
+  z-index: 1000;
+  gap: 4px;
+}
+
+.start-btn {
+  height: 22px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 6px;
+  background: var(--win-grey);
+  border: 1px solid var(--win-border-black);
+  box-shadow: inset 1px 1px var(--win-border-light), 1px 1px var(--win-border-dark);
+  font-weight: bold;
+  font-size: 11px;
+  cursor: pointer;
+}
+.start-btn:active {
+  box-shadow: inset 1px 1px var(--win-border-dark), 1px 1px var(--win-border-light);
+}
+
+.start-icon {
+  height: 14px;
+}
+
+.taskbar-divider {
+  width: 2px;
+  height: 20px;
+  border-left: 1px solid var(--win-border-dark);
+  border-right: 1px solid var(--win-border-light);
+  margin: 0 2px;
+}
+
+.taskbar-items {
+  display: flex;
+  gap: 4px;
+  flex-grow: 1;
+  overflow-x: auto;
+}
+
+.taskbar-item {
+  height: 22px;
+  min-width: 100px;
+  max-width: 160px;
+  background: var(--win-grey);
+  border: 1px solid var(--win-border-black);
+  box-shadow: inset 1px 1px var(--win-border-light), 1px 1px var(--win-border-dark);
+  font-size: 11px;
+  text-align: left;
+  padding: 0 8px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+}
+.taskbar-item:active {
+  box-shadow: inset 1px 1px var(--win-border-dark), 1px 1px var(--win-border-light);
+}
+
+.taskbar-clock {
+  height: 22px;
+  padding: 0 8px;
+  border: 1px solid;
+  border-color: var(--win-border-dark) var(--win-border-light) var(--win-border-light) var(--win-border-dark);
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  background: var(--win-grey);
+}
+
+/* Animations */
+.user-card {
+  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease, visibility 0.4s;
+  transform-origin: bottom center;
+}
+
+.minimized-anim {
+  transform: translateY(100vh) scale(0.1);
+  opacity: 0;
+  pointer-events: none;
+  visibility: hidden;
+}
+
+/* Adjust container for taskbar */
+.container {
+  padding-bottom: 60px;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.how-to-use-btn {
+  padding: 4px 12px;
+  font-size: 12px;
+  width: auto;
+  height: auto;
+  white-space: nowrap;
+}
+
+.contact-link {
+  text-decoration: none;
+  color: inherit;
+}
+
+/* Notepad Window */
+.notepad-window {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 400px;
+  background: #fff;
+  border: 2px solid;
+  border-color: var(--win-border-light) var(--win-border-dark) var(--win-border-dark) var(--win-border-light);
+  box-shadow: 1px 1px var(--win-border-black);
+  z-index: 2000;
+  display: flex;
+  flex-direction: column;
+}
+
+.notepad-content {
+  padding: 15px;
+  font-family: "Courier New", Courier, monospace;
+  font-size: 13px;
+  color: #000;
+  white-space: pre-wrap;
+  background: #fff;
+  border: 1px solid var(--win-border-dark);
+  margin: 2px;
+  min-height: 200px;
+  overflow-y: auto;
+}
+
+.notepad-content p {
+  margin: 0 0 8px 0;
 }
 </style>
 

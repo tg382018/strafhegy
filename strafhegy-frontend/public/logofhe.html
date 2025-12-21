@@ -1,0 +1,120 @@
+<!-- 1. ADIM: Fontu Head kısmına ekleyin (Eğer sitenizde yoksa) -->
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800&display=swap" rel="stylesheet">
+
+<!-- 2. ADIM: CSS Kodları -->
+<style>
+    /* Component Kapsayıcısı */
+    .straf-logo-component {
+        /* Ayarlar: Buradan logonun boyutunu büyütebilir/küçültebilirsiniz */
+        --logo-scale: 0.8; 
+        --primary-color: #00f3ff; /* Camgöbeği */
+        --secondary-color: #bc13fe; /* Mor */
+        --text-color: #ffffff;
+        
+        display: inline-flex;
+        align-items: center;
+        gap: calc(15px * var(--logo-scale));
+        font-family: 'Orbitron', sans-serif;
+        background: transparent; /* Şeffaf arka plan */
+        user-select: none;
+        cursor: pointer;
+        padding: 5px;
+    }
+
+    /* Logo İkon Alanı */
+    .straf-icon-box {
+        position: relative;
+        width: calc(50px * var(--logo-scale));
+        height: calc(50px * var(--logo-scale));
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    /* Dönen Dış Altıgen */
+    .straf-hex-outer {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        border: calc(3px * var(--logo-scale)) solid var(--primary-color);
+        clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+        animation: strafSpin 10s linear infinite;
+        box-shadow: 0 0 calc(10px * var(--logo-scale)) rgba(0, 243, 255, 0.4);
+    }
+
+    /* Sabit İç Altıgen (Blok) */
+    .straf-hex-inner {
+        position: absolute;
+        width: 55%;
+        height: 55%;
+        background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+        clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+        animation: strafPulse 3s ease-in-out infinite alternate;
+    }
+
+    /* Küçük veri noktaları (Blockchain nodeları gibi) */
+    .straf-dots {
+        position: absolute;
+        width: 140%;
+        height: 140%;
+        border-radius: 50%;
+        border: 1px dashed rgba(255, 255, 255, 0.2);
+        animation: strafSpinReverse 15s linear infinite;
+    }
+
+    /* Yazı Alanı */
+    .straf-text-box {
+        display: flex;
+        flex-direction: column;
+        line-height: 1;
+    }
+
+    .straf-title {
+        font-size: calc(28px * var(--logo-scale));
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: calc(1px * var(--logo-scale));
+        background: linear-gradient(90deg, #fff, var(--primary-color));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        text-shadow: 0 0 calc(10px * var(--logo-scale)) rgba(0, 243, 255, 0.3);
+    }
+
+    .straf-subtitle {
+        font-size: calc(10px * var(--logo-scale));
+        color: var(--secondary-color);
+        letter-spacing: calc(3px * var(--logo-scale));
+        margin-left: 2px;
+        font-weight: 600;
+    }
+
+    /* Animasyonlar */
+    @keyframes strafSpin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+    @keyframes strafSpinReverse {
+        0% { transform: rotate(360deg); }
+        100% { transform: rotate(0deg); }
+    }
+    @keyframes strafPulse {
+        0% { opacity: 0.8; transform: scale(0.9); }
+        100% { opacity: 1; transform: scale(1.1); box-shadow: 0 0 15px var(--secondary-color); }
+    }
+</style>
+
+<!-- 3. ADIM: HTML Yapısı -->
+<div class="straf-logo-component">
+    <!-- İkon -->
+    <div class="straf-icon-box">
+        <div class="straf-dots"></div>
+        <div class="straf-hex-outer"></div>
+        <div class="straf-hex-inner"></div>
+    </div>
+    
+    <!-- Yazı -->
+    <div class="straf-text-box">
+        <span class="straf-title">strafhegy</span>
+        <span class="straf-subtitle">FHEVM</span>
+    </div>
+</div>
