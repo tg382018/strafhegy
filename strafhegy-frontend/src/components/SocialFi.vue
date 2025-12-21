@@ -24,6 +24,9 @@
           </div>
         </div>
         <div class="profile-section">
+          <div class="avatar" :style="{ backgroundColor: getAvatarColor(account) }">
+            <span class="avatar-initials">{{ getInitials(account) }}</span>
+          </div>
           <div class="wallet-address">
             {{ isConnected ? account : "Cüzdan bağla (creator panel)" }}
           </div>
@@ -111,8 +114,8 @@
         </div>
 
         <div class="profile-section">
-          <div class="avatar">
-            <img :src="creator.avatar" alt="avatar" />
+          <div class="avatar" :style="{ backgroundColor: getAvatarColor(creator.address) }">
+            <span class="avatar-initials">{{ getInitials(creator.address) }}</span>
           </div>
           <div class="wallet-address">{{ maskAddress(creator.address) }}</div>
         </div>
@@ -373,6 +376,29 @@ const newPos = reactive({
 function maskAddress(addr: string, last = 4) {
   if (!addr) return "";
   return `0x***${addr.slice(-last)}`;
+}
+
+function getAvatarColor(address: string): string {
+  if (!address) return '#6366f1';
+  
+  // Hash the address to get a consistent number
+  let hash = 0;
+  for (let i = 0; i < address.length; i++) {
+    hash = address.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  
+  // Generate vibrant colors using HSL
+  const hue = Math.abs(hash % 360);
+  const saturation = 70; // 70%
+  const lightness = 60; // 60%
+  
+  return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+}
+
+function getInitials(address: string): string {
+  if (!address) return '?';
+  // Use last 3 characters
+  return address.slice(-3).toUpperCase();
 }
 
 function formatEth(wei: bigint) {
@@ -1051,16 +1077,16 @@ header {
   width: 70px;
   height: 70px;
   border-radius: 50%;
-  background: #ddd;
   margin: 0 auto 10px;
   border: 3px solid white;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  overflow: hidden;
-}
-.avatar img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 20px;
+  color: white;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 
 .wallet-address {
