@@ -1,8 +1,8 @@
 {
   "contract": "StrafhegySocial_uint32",
-  "address": "0xf847A80a2f97cBc13bdD5F17f6D2ca8A982F78B7",
+  "address": "0xAab6DA174089692311676632DF30058669B55e33",
   "chainId": 11155111,
   "rpcUrl": "https://ethereum-sepolia.publicnode.com",
-  "deployedAt": "2025-12-21T10:38:13.444Z",
+  "deployedAt": "2025-12-21T11:06:03.653Z",
   "deployer": "0x89cd2C9Cb7f6c510CB9d53CF39177Ee3dfF22681"
 }

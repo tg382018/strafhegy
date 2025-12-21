@@ -18,6 +18,9 @@
       </div>
 
       <div class="header-actions">
+        <div class="search-container">
+          <input v-model="searchQuery" type="text" class="search-input" placeholder="Search creators by username or address..." />
+        </div>
         <button class="win-btn how-to-use-btn" @click="showHelp = true">How to Use</button>
         <button class="connect-btn" :class="{ connected: isConnected }" @click="onToggleWallet">
           {{ connectLabel }}
@@ -51,11 +54,17 @@
               <span>{{ contractAddress ? "Contract OK" : "Contract required" }}</span>
             </div>
             <template v-if="isEditingProfile || !myProfileReady">
-              <div class="pos-details">
-                <span>Monthly fee (ETH)</span>
-                <input v-model="creatorPriceEth" class="input" placeholder="0.005" />
+              <div class="fields-stack">
+                <label class="field">
+                  <span>Username</span>
+                  <input v-model="myUsername" class="input" type="text" placeholder="Your username..." />
+                </label>
+                <label class="field">
+                  <span>Monthly fee (ETH)</span>
+                  <input v-model="creatorPriceEth" class="input" placeholder="0.005" />
+                </label>
               </div>
-              <button class="sub-btn" :disabled="!canWrite || isBusy" @click="upsertProfile">
+              <button class="sub-btn" :disabled="!canWrite || isBusy || !myUsername.trim()" @click="upsertProfile">
                 {{ isBusy ? "Processing..." : "Save Profile" }}
               </button>
             </template>
@@ -91,14 +100,14 @@
               </label>
               <label class="field">
                 <span>Entry price</span>
-                <input v-model="newPos.entryPrice" class="input" type="text" placeholder="100.00" />
+                <input v-model="newPos.entryPrice" class="input" type="text" placeholder="100.00" @input="newPos.entryPrice = cleanPriceInput(newPos.entryPrice)" />
               </label>
               <label class="field">
                 <span>Target price</span>
-                <input v-model="newPos.target" class="input" type="text" placeholder="120.00" />
+                <input v-model="newPos.target" class="input" type="text" placeholder="120.00" @input="newPos.target = cleanPriceInput(newPos.target)" />
               </label>
             </div>
-            <button class="sub-btn" :disabled="!canWrite || isBusy" @click="addPosition">
+            <button class="sub-btn" :disabled="!canWrite || isBusy || !isValidPrice(newPos.entryPrice) || !isValidPrice(newPos.target)" @click="addPosition">
               {{ isBusy ? "Processing..." : "Add Position" }}
             </button>
             <div class="sub-info">
@@ -117,9 +126,9 @@
       </div>
 
       <!-- Creator cards -->
-      <div v-for="creator in creators" :key="creator.address" class="user-card" :class="{ 'minimized-anim': creator.isMinimized }">
+      <div v-for="creator in filteredCreators" :key="creator.address" class="user-card" :class="{ 'minimized-anim': creator.isMinimized }">
         <div class="card-header">
-          <span>User.exe</span>
+          <span>{{ creator.username || 'User' }}.exe</span>
           <div class="window-controls">
             <button class="win-btn" @click="creator.isMinimized = true">_</button>
             <button class="win-btn" disabled>□</button>
@@ -283,7 +292,7 @@ import { useWalletVue, useFhevmVue, getFheInstance, batchDecryptValues } from ".
 
 // Fill this after deploy. We'll also add local hardhat address later.
 const CONTRACT_ADDRESSES: Record<number, string> = {
-  11155111: "0xf847A80a2f97cBc13bdD5F17f6D2ca8A982F78B7", // Sepolia
+  11155111: "0xAab6DA174089692311676632DF30058669B55e33", // Sepolia
   31337: "", // Local
 };
 
@@ -346,7 +355,14 @@ const SOCIAL_ABI = [
       { name: "exists", type: "bool" },
     ],
   },
-  { name: "upsertProfile", type: "function", stateMutability: "nonpayable", inputs: [{ name: "priceWei", type: "uint256" }, { name: "active", type: "bool" }], outputs: [] },
+  {
+    name: "usernames",
+    type: "function",
+    stateMutability: "view",
+    inputs: [{ name: "", type: "address" }],
+    outputs: [{ name: "", type: "string" }],
+  },
+  { name: "upsertProfile", type: "function", stateMutability: "nonpayable", inputs: [{ name: "priceWei", type: "uint256" }, { name: "active", type: "bool" }, { name: "username", type: "string" }], outputs: [] },
   {
     name: "addPosition",
     type: "function",
@@ -422,8 +438,10 @@ type PositionView = {
 
 type CreatorCard = {
   address: string;
+  username: string;
   avatar: string;
   monthlyPriceWei: bigint;
+  activeProfile: boolean;
   subscribed: boolean;
   isOwnCard: boolean; // true if this is the connected user's own card
   expiresAt?: number;
@@ -434,6 +452,21 @@ type CreatorCard = {
 
 const creators = reactive<CreatorCard[]>([]);
 
+const filteredCreators = computed(() => {
+  const query = searchQuery.value.toLowerCase().trim();
+  return creators.filter(c => {
+    // Only show creators with an active profile and at least 1 position
+    if (!c.activeProfile && !c.isOwnCard) return false;
+    if (c.positions.length === 0 && !c.isOwnCard) return false;
+    
+    // Filter by username or address
+    if (!query) return true;
+    const nameMatch = c.username.toLowerCase().includes(query);
+    const addrMatch = c.address.toLowerCase().includes(query);
+    return nameMatch || addrMatch;
+  });
+});
+
 // Creator panel form
 const creatorPriceEth = ref("0.005");
 const myProfileReady = ref(false);
@@ -442,6 +475,8 @@ const myMonthlyPriceWei = ref<bigint>(0n);
 const mySubscriptionExpiry = ref<number>(0);
 const myPanelMinimized = ref(false);
 const showHelp = ref(false);
+const searchQuery = ref("");
+const myUsername = ref("");
 
 const currentTime = ref("");
 setInterval(() => {
@@ -511,6 +546,19 @@ function parsePrice(val: string): number {
   const num = parseFloat(clean);
   if (isNaN(num)) return 0;
   return Math.round(num * 100);
+}
+
+function cleanPriceInput(val: string): string {
+  // Allow only numbers, dot, and comma
+  return val.replace(/[^0-9.,]/g, "");
+}
+
+function isValidPrice(val: string): boolean {
+  if (!val || !val.trim()) return false;
+  // Must have at least one digit and at most one separator (dot or comma)
+  const clean = val.replace(",", ".");
+  const num = parseFloat(clean);
+  return !isNaN(num) && num > 0;
 }
 
 function coinFromCode(code: number) {
@@ -678,8 +726,10 @@ async function ensureCreators() {
   if (!creators.find((c) => c.address.toLowerCase() === me)) {
     creators.unshift({
       address: account.value,
+      username: "",
       avatar: `https://api.dicebear.com/9.x/avataaars/svg?seed=${account.value}`,
       monthlyPriceWei: ethers.parseEther("0.005"),
+      activeProfile: false,
       subscribed: false,
       isOwnCard: true,
       positions: [],
@@ -709,15 +759,22 @@ async function hydrateCreator(read: any, c: CreatorCard) {
   // Check if this is the user's own card
   const isOwn = isConnected.value && c.address.toLowerCase() === account.value.toLowerCase();
   c.isOwnCard = isOwn;
+  c.activeProfile = false;
+  c.username = "";
 
   // Load profile price if active
   try {
     const active = await read.creatorActive(c.address);
     console.log(`- Active: ${active}`);
+    c.activeProfile = active;
     if (active) {
-      const price = await read.monthlyPriceWei(c.address);
-      console.log(`- Monthly Price (Wei): ${price.toString()}`);
+      const [price, username] = await Promise.all([
+        read.monthlyPriceWei(c.address),
+        read.usernames(c.address)
+      ]);
+      console.log(`- Monthly Price (Wei): ${price.toString()}, Username: ${username}`);
       c.monthlyPriceWei = BigInt(price.toString());
+      c.username = username || "";
     }
   } catch (e) {
     console.log(`- Error fetching active/price:`, e);
@@ -974,8 +1031,12 @@ async function refreshMyProfileState(read?: any) {
     }
 
     // Optional: show remaining days for "self subscription" if exists.
-    const exp = await r.subscriptionExpiry(account.value, account.value);
+    const [exp, username] = await Promise.all([
+      r.subscriptionExpiry(account.value, account.value),
+      r.usernames(account.value)
+    ]);
     mySubscriptionExpiry.value = Number(exp.toString());
+    myUsername.value = username || "";
 
     // If profile exists, default to summary view.
     if (myProfileReady.value) isEditingProfile.value = false;
@@ -990,12 +1051,16 @@ async function refreshMyProfileState(read?: any) {
 async function upsertProfile() {
   console.log("upsertProfile called. canWrite:", canWrite.value);
   if (!canWrite.value) return;
+  if (!myUsername.value.trim()) {
+    alert("Username is required!");
+    return;
+  }
   isBusy.value = true;
   try {
     const write = await getWriteContract();
     const priceWei = ethers.parseEther(String(creatorPriceEth.value || "0"));
-    console.log("Sending upsertProfile tx...", priceWei);
-    const tx = await write.upsertProfile(priceWei, true, { gasLimit: 600000 });
+    console.log("Sending upsertProfile tx...", priceWei, myUsername.value);
+    const tx = await write.upsertProfile(priceWei, true, myUsername.value, { gasLimit: 1000000 });
     console.log("Tx sent, waiting...", tx.hash);
     await tx.wait();
     console.log("Tx confirmed");
@@ -1636,6 +1701,25 @@ header {
 
 .close-pos-btn:hover:not(:disabled) {
   background: #ff000044 !important;
+}
+
+.search-container {
+  margin-right: 10px;
+}
+
+.search-input {
+  background: white;
+  border: 2px solid;
+  border-color: var(--win-border-dark) var(--win-border-light) var(--win-border-light) var(--win-border-dark);
+  padding: 4px 8px;
+  font-family: inherit;
+  font-size: 12px;
+  width: 250px;
+  outline: none;
+}
+
+.search-input:focus {
+  border-color: var(--win-blue);
 }
 </style>
 

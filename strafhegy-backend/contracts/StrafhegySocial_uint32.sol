@@ -31,6 +31,7 @@ contract StrafhegySocial_uint32 is ZamaEthereumConfig {
 
     mapping(address => uint256) public monthlyPriceWei; // creator => monthly fee (wei)
     mapping(address => bool) public creatorActive; // creator => active profile
+    mapping(address => string) public usernames; // creator => username
     mapping(address => Position[]) private _positions; // creator => positions
 
     // creator => subscriber => expiry timestamp
@@ -40,7 +41,7 @@ contract StrafhegySocial_uint32 is ZamaEthereumConfig {
     address[] private _allCreators;
     mapping(address => bool) private _isCreator;
 
-    event ProfileUpserted(address indexed creator, uint256 monthlyPriceWei, bool active);
+    event ProfileUpserted(address indexed creator, uint256 monthlyPriceWei, bool active, string username);
     event PositionAdded(address indexed creator, uint256 indexed positionId);
     event PositionStatusUpdated(address indexed creator, uint256 indexed positionId);
     event Subscribed(address indexed subscriber, address indexed creator, uint32 expiresAt, uint256 paidWei);
@@ -59,10 +60,11 @@ contract StrafhegySocial_uint32 is ZamaEthereumConfig {
     // Creator
     // ============
 
-    function upsertProfile(uint256 priceWei, bool active) external {
+    function upsertProfile(uint256 priceWei, bool active, string calldata username) external {
         monthlyPriceWei[msg.sender] = priceWei;
         creatorActive[msg.sender] = active;
-        emit ProfileUpserted(msg.sender, priceWei, active);
+        usernames[msg.sender] = username;
+        emit ProfileUpserted(msg.sender, priceWei, active, username);
     }
 
     function addPosition(
