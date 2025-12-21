@@ -1,15 +1,16 @@
-require("@fhevm/hardhat-plugin");
-require("@nomicfoundation/hardhat-chai-matchers");
-require("@nomicfoundation/hardhat-ethers");
-require("@nomicfoundation/hardhat-verify");
-require("@typechain/hardhat");
-require("hardhat-deploy");
-require("hardhat-gas-reporter");
-require("solidity-coverage");
+import "@fhevm/hardhat-plugin";
+import "@nomicfoundation/hardhat-chai-matchers";
+import "@nomicfoundation/hardhat-ethers";
+import "@nomicfoundation/hardhat-verify";
+import "@typechain/hardhat";
+import "hardhat-deploy";
+import "hardhat-gas-reporter";
+import "solidity-coverage";
+import { HardhatUserConfig } from "hardhat/config";
+import fs from "fs";
+import path from "path";
 
 // Minimal .env loader (no external deps). Keeps PRIVATE_KEY out of logs.
-const fs = require("fs");
-const path = require("path");
 (() => {
   try {
     const envPath = path.join(__dirname, ".env");
@@ -33,12 +34,10 @@ const path = require("path");
 })();
 
 const MNEMONIC = process.env.MNEMONIC || "play cement much paper mandate rubber marble ketchup over wonder critic survey";
-const PRIVATE_KEY = process.env.PRIVATE_KEY || "";
 const SEPOLIA_RPC_URL = process.env.SEPOLIA_RPC_URL || "https://ethereum-sepolia.publicnode.com";
 const ETHERSCAN_API_KEY = process.env.ETHERSCAN_API_KEY || "";
 
-/** @type {import('hardhat/config').HardhatUserConfig} */
-const config = {
+const config: HardhatUserConfig = {
   defaultNetwork: "hardhat",
   namedAccounts: {
     deployer: 0,
@@ -86,4 +85,4 @@ const config = {
   },
 };
 
-module.exports = config;
+export default config;

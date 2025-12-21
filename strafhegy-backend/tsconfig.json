@@ -1,7 +1,10 @@
 {
   "compilerOptions": {
     "target": "ES2017",
-    "lib": ["ES2017", "DOM"],
+    "lib": [
+      "ES2017",
+      "DOM"
+    ],
     "module": "commonjs",
     "declaration": true,
     "strict": true,
@@ -17,8 +20,14 @@
     "inlineSources": true,
     "experimentalDecorators": true,
     "strictPropertyInitialization": false,
-    "typeRoots": ["./node_modules/@types"],
-    "types": ["node", "mocha", "chai"],
+    "typeRoots": [
+      "./node_modules/@types"
+    ],
+    "types": [
+      "node",
+      "mocha",
+      "chai"
+    ],
     "forceConsistentCasingInFileNames": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
@@ -28,7 +37,7 @@
     "./deploy/**/*",
     "./test/**/*",
     "./tasks/**/*",
-    "./hardhat.config.js"
+    "./hardhat.config.ts"
   ],
   "exclude": [
     "node_modules",
