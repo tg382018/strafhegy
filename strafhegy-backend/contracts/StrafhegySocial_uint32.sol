@@ -41,6 +41,10 @@ contract StrafhegySocial_uint32 is ZamaEthereumConfig {
     address[] private _allCreators;
     mapping(address => bool) private _isCreator;
 
+    // Subscriber tracking
+    mapping(address => address[]) private _creatorSubscribers; // creator => list of all subscribers
+    mapping(address => mapping(address => bool)) private _hasSubscribedBefore; // creator => subscriber => bool
+
     event ProfileUpserted(address indexed creator, uint256 monthlyPriceWei, bool active, string username);
     event PositionAdded(address indexed creator, uint256 indexed positionId);
     event PositionStatusUpdated(address indexed creator, uint256 indexed positionId);
@@ -159,6 +163,12 @@ contract StrafhegySocial_uint32 is ZamaEthereumConfig {
             require(ok, "RefundFailed");
         }
 
+        // Track subscriber in the list if not already there
+        if (!_hasSubscribedBefore[creator][msg.sender]) {
+            _hasSubscribedBefore[creator][msg.sender] = true;
+            _creatorSubscribers[creator].push(msg.sender);
+        }
+
         // _grantAllPositions(creator, msg.sender);
         // Note: Permissions are NOT auto-granted to save gas.
         // User must call grantAccess() or refreshAccess() separately if needed.
@@ -263,6 +273,19 @@ contract StrafhegySocial_uint32 is ZamaEthereumConfig {
     /// @notice Returns all creator addresses (use with caution for large arrays)
     function getAllCreators() external view returns (address[] memory) {
         return _allCreators;
+    }
+
+    /// @notice Returns the number of active subscribers for a creator
+    function getActiveSubscriberCount(address creator) external view returns (uint256) {
+        address[] storage subs = _creatorSubscribers[creator];
+        uint256 activeCount = 0;
+        uint32 nowTs = uint32(block.timestamp);
+        for (uint256 i = 0; i < subs.length; i++) {
+            if (subscriptionExpiry[creator][subs[i]] > nowTs) {
+                activeCount++;
+            }
+        }
+        return activeCount;
     }
 }
 

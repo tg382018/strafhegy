@@ -139,6 +139,9 @@
             <span class="avatar-initials">{{ getInitials(ownCard.address) }}</span>
           </div>
           <div class="wallet-address">{{ maskAddress(ownCard.address) }}</div>
+          <div v-if="ownCard.activeSubscribers !== undefined" class="subscriber-count">
+            👥 {{ ownCard.activeSubscribers }} Active Subscribers
+          </div>
         </div>
 
         <div class="positions-list">
@@ -217,6 +220,9 @@
             <span class="avatar-initials">{{ getInitials(creator.address) }}</span>
           </div>
           <div class="wallet-address">{{ maskAddress(creator.address) }}</div>
+          <div v-if="creator.activeSubscribers !== undefined" class="subscriber-count">
+            👥 {{ creator.activeSubscribers }} Active Subscribers
+          </div>
         </div>
 
         <div class="positions-list">
@@ -368,7 +374,7 @@ import { useWalletVue, useFhevmVue, getFheInstance, batchDecryptValues } from ".
 
 // Fill this after deploy. We'll also add local hardhat address later.
 const CONTRACT_ADDRESSES: Record<number, string> = {
-  11155111: "0x9c441bAa4214555FF6CAaE4364Fa055C7665174a", // Sepolia
+  11155111: "0x86F4092A44CeE9490c2955322f3b62B793ff7c79", // Sepolia
   31337: "", // Local
 };
 
@@ -473,6 +479,7 @@ const SOCIAL_ABI = [
   { name: "getCreatorCount", type: "function", stateMutability: "view", inputs: [], outputs: [{ name: "", type: "uint256" }] },
   { name: "getCreatorAt", type: "function", stateMutability: "view", inputs: [{ name: "index", type: "uint256" }], outputs: [{ name: "", type: "address" }] },
   { name: "getAllCreators", type: "function", stateMutability: "view", inputs: [], outputs: [{ name: "", type: "address[]" }] },
+  { name: "getActiveSubscriberCount", type: "function", stateMutability: "view", inputs: [{ name: "creator", type: "address" }], outputs: [{ name: "", type: "uint256" }] },
 ];
 
 // =========
@@ -523,6 +530,7 @@ type CreatorCard = {
   expiresAt?: number;
   isBusy?: boolean;
   isMinimized?: boolean;
+  activeSubscribers?: number;
   positions: PositionView[];
 };
 
@@ -841,13 +849,15 @@ async function hydrateCreator(read: any, c: CreatorCard) {
     console.log(`- Active: ${active}`);
     c.activeProfile = active;
     if (active) {
-      const [price, username] = await Promise.all([
+      const [price, username, subCount] = await Promise.all([
         read.monthlyPriceWei(c.address),
-        read.usernames(c.address)
+        read.usernames(c.address),
+        read.getActiveSubscriberCount(c.address)
       ]);
-      console.log(`- Monthly Price (Wei): ${price.toString()}, Username: ${username}`);
+      console.log(`- Monthly Price (Wei): ${price.toString()}, Username: ${username}, Active Subs: ${subCount}`);
       c.monthlyPriceWei = BigInt(price.toString());
       c.username = username || "";
+      c.activeSubscribers = Number(subCount.toString());
     }
   } catch (e) {
     console.log(`- Error fetching active/price:`, e);
@@ -1494,6 +1504,13 @@ header {
   width: 100%;
   box-sizing: border-box;
   text-align: left;
+}
+
+.subscriber-count {
+  font-size: 11px;
+  color: #000080;
+  font-weight: bold;
+  margin-top: 4px;
 }
 
 .positions-list {
