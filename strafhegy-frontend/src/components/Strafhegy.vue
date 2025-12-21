@@ -2,31 +2,15 @@
   <div class="page">
     <div class="background-mesh"></div>
 
-    <header>
-      <div class="logo">
-        <div class="straf-logo-component">
-          <div class="straf-icon-box">
-            <div class="straf-dots"></div>
-            <div class="straf-hex-outer"></div>
-            <div class="straf-hex-inner"></div>
-          </div>
-          <div class="straf-text-box">
-            <span class="straf-title">strafhegy</span>
-            <span class="straf-subtitle">FHEVM</span>
-          </div>
-        </div>
-      </div>
+    <AppHeader 
+      :is-connected="isConnected"
+      :connect-label="connectLabel"
+      v-model:search-query="searchQuery"
+      @toggle-wallet="onToggleWallet"
+      @show-help="showHelp = true"
+    />
 
-      <div class="header-actions">
-        <div class="search-container">
-          <input v-model="searchQuery" type="text" class="search-input" placeholder="Search creators by username or address..." />
-        </div>
-        <button class="win-btn how-to-use-btn" @click="showHelp = true">How to Use</button>
-        <button class="connect-btn" :class="{ connected: isConnected }" @click="onToggleWallet">
-          {{ connectLabel }}
-        </button>
-      </div>
-    </header>
+    <SortControls v-model="sortBy" />
 
     <div class="container">
       <!-- Creator panel (for testing / demo) -->
@@ -314,32 +298,13 @@
     </div>
 
     <!-- Windows 98 Taskbar -->
-    <div class="taskbar">
-      <a href="mailto:tgulck@gmail.com" class="start-btn contact-link">
-        <img src="/strafhegylogo.png" class="start-icon" />
-        <span>Contact</span>
-      </a>
-      
-      <div class="taskbar-divider"></div>
-      
-      <div class="taskbar-items">
-        <button v-if="myPanelMinimized" class="taskbar-item" @click="myPanelMinimized = false">
-          Creator.exe
-        </button>
-        <button 
-          v-for="c in creators.filter(cr => cr.isMinimized)" 
-          :key="c.address" 
-          class="taskbar-item" 
-          @click="c.isMinimized = false"
-        >
-          {{ c.username || 'User' }} ({{ maskAddress(c.address, 3) }})
-        </button>
-      </div>
-      
-      <div class="taskbar-clock">
-        {{ currentTime }}
-      </div>
-    </div>
+    <Taskbar 
+      :current-time="currentTime"
+      :my-panel-minimized="myPanelMinimized"
+      :minimized-creators="minimizedCreators"
+      @restore-panel="myPanelMinimized = false"
+      @restore-creator="(addr) => restoreCreator(addr)"
+    />
 
     <!-- Notepad Help Window -->
     <div v-if="showHelp" class="notepad-window">
@@ -367,6 +332,9 @@
 import { computed, onMounted, reactive, ref } from "vue";
 import { ethers } from "ethers";
 import { useWalletVue, useFhevmVue, getFheInstance, batchDecryptValues } from "../fhevm";
+import AppHeader from "./AppHeader.vue";
+import Taskbar from "./Taskbar.vue";
+import SortControls from "./SortControls.vue";
 
 // =========
 // Config
@@ -538,21 +506,44 @@ const creators = reactive<CreatorCard[]>([]);
 
 const ownCard = computed(() => creators.find(c => c.isOwnCard));
 
+const minimizedCreators = computed(() => creators.filter(c => c.isMinimized));
+const sortBy = ref<'newest' | 'oldest' | 'subscribers'>('newest');
+
 const otherCreators = computed(() => {
   const query = searchQuery.value.toLowerCase().trim();
-  return creators.filter(c => {
+  
+  // 1. Filter
+  let filtered = creators.filter(c => {
     if (c.isOwnCard) return false;
-    // Only show creators with an active profile and at least 1 position
     if (!c.activeProfile) return false;
     if (c.positions.length === 0) return false;
     
-    // Filter by username or address
     if (!query) return true;
     const nameMatch = c.username.toLowerCase().includes(query);
     const addrMatch = c.address.toLowerCase().includes(query);
     return nameMatch || addrMatch;
   });
+
+  // 2. Sort
+  // We use the original index in 'creators' as a proxy for time (oldest first)
+  const getOriginalIndex = (addr: string) => creators.findIndex(c => c.address === addr);
+
+  return [...filtered].sort((a, b) => {
+    if (sortBy.value === 'subscribers') {
+      return (b.activeSubscribers || 0) - (a.activeSubscribers || 0);
+    } else if (sortBy.value === 'newest') {
+      return getOriginalIndex(b.address) - getOriginalIndex(a.address);
+    } else {
+      // oldest
+      return getOriginalIndex(a.address) - getOriginalIndex(b.address);
+    }
+  });
 });
+
+function restoreCreator(address: string) {
+  const c = creators.find(cr => cr.address.toLowerCase() === address.toLowerCase());
+  if (c) c.isMinimized = false;
+}
 
 // Creator panel form
 const creatorPriceEth = ref("0.005");
@@ -1280,125 +1271,6 @@ onMounted(async () => {
   background-size: cover;
 }
 
-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 10px 20px;
-  background: var(--win-grey);
-  border-bottom: 2px solid var(--win-border-dark);
-  box-shadow: inset 1px 1px var(--win-border-light);
-  position: sticky;
-  top: 0;
-  z-index: 100;
-}
-
-.logo {
-  display: flex;
-  align-items: center;
-}
-
-/* Strafhegy Logo Component Styles */
-.straf-logo-component {
-  --logo-scale: 0.6; 
-  --primary-color: #006400; /* Koyu Yeşil */
-  --secondary-color: #bc13fe;
-  --text-color: #ffffff;
-  
-  display: inline-flex;
-  align-items: center;
-  gap: calc(15px * var(--logo-scale));
-  font-family: 'Orbitron', sans-serif;
-  background: transparent;
-  user-select: none;
-  cursor: pointer;
-  padding: 5px;
-}
-
-.straf-icon-box {
-  position: relative;
-  width: calc(50px * var(--logo-scale));
-  height: calc(50px * var(--logo-scale));
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-.straf-hex-outer {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  border: calc(3px * var(--logo-scale)) solid var(--primary-color);
-  clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
-  animation: strafSpin 10s linear infinite;
-  box-shadow: 0 0 calc(10px * var(--logo-scale)) rgba(0, 243, 255, 0.4);
-}
-
-.straf-hex-inner {
-  position: absolute;
-  width: 55%;
-  height: 55%;
-  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
-  clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
-  animation: strafPulse 3s ease-in-out infinite alternate;
-}
-
-.straf-dots {
-  position: absolute;
-  width: 140%;
-  height: 140%;
-  border-radius: 50%;
-  border: 1px dashed rgba(255, 255, 255, 0.2);
-  animation: strafSpinReverse 15s linear infinite;
-}
-
-.straf-text-box {
-  display: flex;
-  flex-direction: column;
-  line-height: 1;
-}
-
-.straf-title {
-  font-size: calc(28px * var(--logo-scale));
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: calc(1px * var(--logo-scale));
-  background: linear-gradient(90deg, #888, var(--primary-color));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  text-shadow: 0 0 calc(10px * var(--logo-scale)) rgba(0, 100, 0, 0.3);
-}
-
-.straf-subtitle {
-  font-size: calc(10px * var(--logo-scale));
-  color: var(--secondary-color);
-  letter-spacing: calc(3px * var(--logo-scale));
-  margin-left: 2px;
-  font-weight: 600;
-}
-
-@keyframes strafSpin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-@keyframes strafSpinReverse {
-  0% { transform: rotate(360deg); }
-  100% { transform: rotate(0deg); }
-}
-@keyframes strafPulse {
-  0% { opacity: 0.8; transform: scale(0.9); }
-  100% { opacity: 1; transform: scale(1.1); box-shadow: 0 0 15px var(--secondary-color); }
-}
-
-.connect-btn {
-  background: var(--win-grey);
-  border: 1px solid var(--win-border-black);
-  box-shadow: inset 1px 1px var(--win-border-light), 1px 1px var(--win-border-dark);
-  padding: 4px 16px;
-  font-weight: 400;
-  color: #000;
-  cursor: pointer;
-}
 .connect-btn:active {
   box-shadow: inset 1px 1px var(--win-border-dark), 1px 1px var(--win-border-light);
   padding: 5px 15px 3px 17px;
