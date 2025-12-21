@@ -369,3 +369,22 @@
 .search-input:focus {
   border-color: var(--win-blue);
 }
+/* Slogan Wrapper */
+.slogan-wrapper {
+  position: fixed;
+  top: 150px;
+  right: 5%;
+  z-index: 100;
+}
+
+@media (max-width: 1200px) {
+  .slogan-wrapper {
+    position: relative;
+    top: auto;
+    right: auto;
+    margin: 20px auto;
+    text-align: center;
+    display: flex;
+    justify-content: center;
+  }
+}

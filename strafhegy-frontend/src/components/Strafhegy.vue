@@ -10,6 +10,15 @@
       @show-help="showHelp = true"
     />
 
+    <div v-if="!isConnected" class="slogan-wrapper">
+      <TypewriterSlogan 
+        text="Welcome to Strafhegy.
+Encrypted SocialFi.
+Share Alpha. Keep Privacy." 
+        :typing-speed="50"
+      />
+    </div>
+
     <SortControls v-model="sortBy" />
 
     <div class="container">
@@ -336,6 +345,7 @@ import AppHeader from "./AppHeader.vue";
 import Taskbar from "./Taskbar.vue";
 import SortControls from "./SortControls.vue";
 import WinButton from "./WinButton.vue";
+import TypewriterSlogan from "./TypewriterSlogan.vue";
 import { CONTRACT_ADDRESSES, SEPOLIA_CONFIG, SOCIAL_ABI } from "../constants";
 import type { PositionView, CreatorCard } from "../types";
 
