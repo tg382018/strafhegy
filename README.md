@@ -32,6 +32,7 @@ Result: The proprietary "Entry" and "Target" prices are revealed only to you!
 **4. Managing Positions**
 Close Position: Creators can click "Close" to end a trade signal.
 Refresh: Subscribers should click "Refresh" to sync the latest encrypted logic from the chain.
+
 ---
 
 ## 📊 Comparison: Why Strafhegy?
