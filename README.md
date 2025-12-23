@@ -1,6 +1,6 @@
 # Strafhegy: Encrypted SocialFi 🛡️
 
-![Strafhegy Banner](./strafhegy-frontend/public/strafhegylogo.png)
+
 
 > **"Share Alpha. Keep Privacy."**
 
