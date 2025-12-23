@@ -7,6 +7,8 @@
 **Strafhegy** is a decentralized trading platform built on **Zama FHEVM**, allowing creators to share on-chain strategies that are **mathematically proven to be encrypted**.
 
 **How to Use Strafhegy**
+
+
 **1. Getting Started**
 Connect Wallet: Click the button in the top-right corner.
 Network: Ensure you are on the Sepolia testnet. The app will initialize the Zama FHEVM automatically.
@@ -32,6 +34,7 @@ Result: The proprietary "Entry" and "Target" prices are revealed only to you!
 **4. Managing Positions**
 Close Position: Creators can click "Close" to end a trade signal.
 Refresh: Subscribers should click "Refresh" to sync the latest encrypted logic from the chain.
+
 ---
 
 ## 📊 Comparison: Why Strafhegy?
