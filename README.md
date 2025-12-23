@@ -6,6 +6,32 @@
 
 **Strafhegy** is a decentralized trading platform built on **Zama FHEVM**, allowing creators to share on-chain strategies that are **mathematically proven to be encrypted**.
 
+**How to Use Strafhegy**
+**1. Getting Started**
+Connect Wallet: Click the button in the top-right corner.
+Network: Ensure you are on the Sepolia testnet. The app will initialize the Zama FHEVM automatically.
+
+**2. For Creators (Traders)**
+Set Up Profile:
+Go to your card (first one on the left).
+Set a Monthly Fee (e.g., 0.005 ETH) and click Save Profile.
+Share a Strategy:
+Enter the Coin (e.g., ETH), Expectation (Long), Entry Price, and Target.
+Click Add Position.
+Result: Your position is encrypted and stored on-chain. Nobody (not even the devs) can see the raw values yet.
+
+**3. For Subscribers (Users)**
+Subscribe:
+Find a Creator in the list.
+Click Subscribe and pay the monthly fee.
+Decrypt & View:
+Click Start Decryption.
+Sign the EIP-712 request in your wallet (this proves you are authorized).
+Result: The proprietary "Entry" and "Target" prices are revealed only to you!
+
+**4. Managing Positions**
+Close Position: Creators can click "Close" to end a trade signal.
+Refresh: Subscribers should click "Refresh" to sync the latest encrypted logic from the chain.
 ---
 
 ## 📊 Comparison: Why Strafhegy?
@@ -124,7 +150,7 @@ stateDiagram-v2
 
 ## 📂 Project Structure
 
-```mermaid
+
 graph LR
     Root[📂 Strafhegy] --> FE[📂 strafhegy-frontend]
     Root --> BE[📂 strafhegy-backend]
@@ -134,7 +160,7 @@ graph LR
     
     BE --> Contracts[📜 /contracts<br/>(Solidity)]
     BE --> Scripts[⚙️ /scripts<br/>(Deploy)]
-```
+
 
 ---
 
