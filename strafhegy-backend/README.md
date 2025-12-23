@@ -1,142 +1,166 @@
-# Strafhegy: The Encrypted SocialFi Platform
+# Strafhegy: Encrypted SocialFi 🛡️
 
 ![Strafhegy Banner](../strafhegy-frontend/public/strafhegylogo.png)
 
-**Strafhegy** is a next-generation **SocialFi** dApp built on the **Zama FHEVM** (Fully Homomorphic Encryption Virtual Machine). It solves the critical problem of transparency vs. privacy in social trading.
+> **"Share Alpha. Keep Privacy."**
 
-Traditionally, sharing on-chain strategies means exposing your wallet and exact moves to everyone. With Strafhegy, Creators can prove their performance and share strategies **encrypted on-chain**. Only paying subscribers can decrypt and view the specific entry/exit points, ensuring "Alpha" remains exclusive.
-
----
-
-## 🌟 Key Features
-
-*   **🛡️ End-to-End Encryption:** Trading signals (Entry Price, Target, Coin Type) are encrypted using Zama's FHE technology. Nodes validate transactions without ever seeing the raw data.
-*   **💳 Subscription-Gated Access:** Smart contracts handle monthly subscription fees securely. Access to decrypt data is granted strictly on-chain via `FHE.allow`.
-*   **🚫 No Backdoors:** Even the platform developers cannot see your hidden strategies. Privacy is mathematically guaranteed by the FHE protocol.
-*   **💾 Retro User Interface:** A nostalgic Windows 98/XP-style interface that makes interacting with advanced crypto-tech fun and familiar.
+**Strafhegy** is a decentralized trading platform built on **Zama FHEVM**, allowing creators to share on-chain strategies that are **mathematically proven to be encrypted**.
 
 ---
 
-## 🔄 Chronological User Flow
+## 📊 Comparison: Why Strafhegy?
 
-### 1. Initialization
-*   **Connect Wallet:** User connects via MetaMask.
-*   **FHEVM Init:** The app initializes the Zama Relayer instances to enable encrypted operations on the Sepolia testnet.
-
-### 2. The Creator Journey (e.g., Alice)
-*   **Profile Setup:** Alice sets her "Monthly Fee" (e.g., 0.005 ETH). This registers her as a Creator on the smart contract.
-*   **Strategy Creation:** Alice spots an opportunity. She enters:
-    *   *Coin:* ETH
-    *   *Expectation:* Long
-    *   *Entry:* $2500
-    *   *Target:* $3000
-    *   *Encrypted Fields:* All these specific values.
-*   **Encryption:** The app encrypts these values *client-side*, generating secure handles.
-*   **On-Chain Submission:** The encrypted "handles" are sent to the Strafhegy smart contract. The network stores them, but they appear as random ciphertext to observers.
-
-### 3. The Subscriber Journey (e.g., Bob)
-*   **Discovery:** Bob explores the "Other Creators" list and sees Alice's profile.
-*   **Subscription:** Bob pays the 0.005 ETH fee to the contract.
-*   **Access Grant:** The contract records Bob's subscription and automatically executes `FHE.allow` to grant Bob's wallet address permission to compute/view Alice's previous and future ciphertexts for the duration of the subscription.
-*   **Decryption:** Bob clicks "Start Decryption".
-    1.  The app requests an **EIP-712** signature from Bob's wallet (proof of identity).
-    2.  This signature is sent to the FHEVM network.
-    3.  The network re-encrypts the data specifically for Bob's viewing key.
-    4.  Bob's frontend reveals the plaintext: "ETH Long @ $2500".
+| Feature | 🐢 Traditional SocialFi | 🚀 Strafhegy (FHE) |
+| :--- | :--- | :--- |
+| **Data Visibility** | Public (Plaintext) | **Encrypted (Ciphertext)** |
+| **MEV Protection** | ❌ Vulnerable to Sandwich Attacks | ✅ **Front-running Resistant** |
+| **Monetization** | Easily bypassed (Copy-trading) | 🔒 **Strictly Enforced on Chain** |
+| **Trust** | "Trust me bro" screenshots | 📜 **Verifiable On-Chain History** |
+| **UX** | Standard/Boring | 💾 **Retro Windows 98 Style** |
 
 ---
 
-## 📝 Example Scenario: "The Alpha Leak Problem"
-
-**Without Strafhegy:**
-Alice finds a gem. She tweets "Buying token X". Bots immediately front-run her, and non-paying users copy the trade without supporting her work. She loses her edge.
-
-**With Strafhegy:**
-1.  **Alice** posts an encrypted signal.
-2.  **Public** sees: `[Encrypted Position #42]`.
-3.  **Bob (Subscriber)** clicks decrypt and sees: `Buy $LINK at $15.00`.
-4.  **Charlie (Non-Subscriber)** clicks decrypt and sees: `Access Denied` or random garbage data.
-
-Alice monetizes her knowledge securely. Bob gets exclusive access. The market stays fair.
-
----
-
-## 🛠 Technical Architecture
-
-### System Overview
+## 🗺️ Ecosystem Architecture
 
 ```mermaid
 graph TD
-    User[Subscriber (Bob)]
-    Creator[Creator (Alice)]
-    Frontend[Vue 3 App (Retro UI)]
-    Contract[Strafhegy.sol]
-    FHEVM[Zama FHEVM Network]
-
-    subgraph On-Chain
-    Contract
-    FHEVM
+    subgraph "Client Layer (Vue 3)"
+        UI[🖥️ Retro UI]
+        SDK[🔐 Zama Client SDK]
     end
 
-    Creator -->|1. Encrypts Data| Frontend
-    Frontend -->|2. addPosition(encryptedHandles)| Contract
-    Contract -->|3. Store Ciphertext| FHEVM
-    
-    User -->|4. Subscribe (Pay ETH)| Contract
-    Contract -->|5. FHE.allow(User)| FHEVM
-    
-    User -->|6. Request Decryption| Frontend
-    Frontend -->|7. userDecrypt(signature)| FHEVM
-    FHEVM -->|8. Re-encrypted Result| Frontend
-    Frontend -->|9. Display Plaintext| User
-```
+    subgraph "Blockchain Layer (Sepolia)"
+        SC[📜 Strafhegy Contract]
+        FHE[☁️ FHEVM Coprocessor]
+    end
 
-### Tech Stack
-*   **Frontend:** Vue 3 (Composition API), Vite, Ethers.js v6.
-*   **Styling:** Custom CSS (Windows 98/XP Theme).
-*   **FHE SDK:** `@fhevmjs` (Zama Relayer SDK) for client-side encryption/decryption.
-*   **Smart Contracts:** Solidity 0.8.24, `@fhevm/solidity`.
-*   **Network:** Sepolia Testnet (Zama Devnet).
+    User((👤 Subscriber)) <-->|1. Interact| UI
+    Creator((👩‍💻 Creator)) <-->|1. Interact| UI
+
+    UI -->|2. Encrypt/Decrypt| SDK
+    SDK <-->|3. Submit Ciphertext| SC
+    SC <-->|4. Compute/Re-encrypt| FHE
+```
 
 ---
 
-## 🚀 Installation & Setup
+## 🔄 User Flow: The "Alpha" Lifecycle
 
-### Prerequisites
-*   Node.js v18+
-*   MetaMask Wallet
-*   Git
+Instead of reading lengthy paragraphs, follow the data flow below:
 
-### 1. Clone the Repository
-```bash
-git clone https://github.com/tg382018/strafhegy.git
-cd strafhegy
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Alice as 👩‍💻 Creator
+    participant App as 🖥️ Strafhegy App
+    participant Chain as ⛓️ Smart Contract
+    participant Zama as ☁️ FHEVM Network
+    actor Bob as 👤 Subscriber
+
+    Note over Alice, Zama: 🟢 PHASE 1: Creation & Encryption
+    Alice->>App: Input Strategy (Long ETH @ $2500)
+    App->>App: Encrypt Client-Side (Create Handles)
+    App->>Chain: addPosition(encryptedHandles)
+    Chain->>Zama: Store Ciphertext (Nobody can read this)
+
+    Note over Bob, Zama: 🟠 PHASE 2: Subscription
+    Bob->>Chain: Subscribe (Pay 0.005 ETH)
+    Chain->>Chain: Verify Payment
+    Chain->>Zama: FHE.allow(Bob, Alice's Data)
+    Note right of Zama: Access Granted On-Chain ✅
+
+    Note over Bob, Zama: 🔵 PHASE 3: Decryption
+    Bob->>App: Click 'Decrypt'
+    App->>Bob: Request Signature (EIP-712)
+    Bob->>App: Sign Request
+    App->>Zama: userDecrypt(handles, signature)
+    Zama->>App: Return Re-encrypted Data
+    App->>Bob: Show "Long ETH @ $2500"
 ```
 
-### 2. Backend (Smart Contracts)
+---
+
+## 🧩 Data Privacy Model
+
+How we handle your secret data states:
+
+| State | Who Can Read? | Technical Type |
+| :--- | :--- | :--- |
+| **At Rest (On-Chain)** | 🚫 **NOBODY** (Not even validators) | `euint32` |
+| **In Transit** | 🚫 **NOBODY** (Encrypted Handles) | `bytes` |
+| **Post-Decryption** | ✅ **Authorized Subscriber Only** | `uint32` (Client-side) |
+
+```mermaid
+stateDiagram-v2
+    [*] --> PlaintextInput
+    PlaintextInput --> EncryptedHandle: 🔐 Zama SDK Encrypt
+    EncryptedHandle --> OnChainStorage: Transaction
+    OnChainStorage --> AccessCheck: ❓ Decorator View
+    
+    state AccessCheck {
+        (*) --> CheckPayment
+        CheckPayment --> GrantAccess: Paid ✅
+        CheckPayment --> DenyAccess: Unpaid ❌
+    }
+
+    GrantAccess --> ReEncryption: 🗝️ KMS Re-encrypt
+    ReEncryption --> DecryptedView: User's Browser
+    DenyAccess --> [*]: Access Denied
+```
+
+---
+
+## 🛠 Tech Stack & Tools
+
+| Component | Technology | Purpose |
+| :--- | :--- | :--- |
+| **Frontend Framework** | ![Vue](https://img.shields.io/badge/Vue.js-35495E?style=flat&logo=vuedotjs&logoColor=4FC08D) | Reactive UI Component Architecture |
+| **Build Tool** | ![Vite](https://img.shields.io/badge/Vite-646CFF?style=flat&logo=vite&logoColor=white) | Fast HMR and Building |
+| **Smart Contracts** | ![Solidity](https://img.shields.io/badge/Solidity-363636?style=flat&logo=solidity&logoColor=white) | Business Logic & Access Control |
+| **Encryption** | **Zama FHEVM** | Homomorphic Encryption Operations |
+| **Interaction** | **Ethers.js v6** | Wallet Connection & Contract Calls |
+
+---
+
+## 📂 Project Structure
+
+```mermaid
+graph LR
+    Root[📂 Strafhegy] --> FE[📂 strafhegy-frontend]
+    Root --> BE[📂 strafhegy-backend]
+    
+    FE --> Components[🧩 /components<br/>(Retro UI)]
+    FE --> FHE[🔐 /fhevm<br/>(SDK Logic)]
+    
+    BE --> Contracts[📜 /contracts<br/>(Solidity)]
+    BE --> Scripts[⚙️ /scripts<br/>(Deploy)]
+```
+
+---
+
+## ⚡ Quick Start
+
+### 1. Installation
+```bash
+git clone https://github.com/tg382018/strafhegy.git
+```
+
+### 2. Launch Backend
 ```bash
 cd strafhegy-backend
 npm install
-
-# Compile contracts
 npx hardhat compile
-
-# Deploy to Sepolia (configured in hardhat.config.ts)
 npm run deploy:sepolia
 ```
 
-### 3. Frontend (Application)
+### 3. Launch Frontend
 ```bash
 cd strafhegy-frontend
 npm install
-
-# Run development server
 npm run dev
 ```
-
-Open `http://localhost:5173` (or the port shown) to launch the app.
 
 ---
 
 ## 📄 License
-MIT License. Built with ❤️ for the Zama FHEVM ecosystem.
+MIT License. Built for **Zama** Developer Program.
