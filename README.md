@@ -4,7 +4,7 @@
 
 > **"Share Alpha. Keep Privacy."**
 
-**Strafhegy** is a decentralized trading platform built on **Zama FHEVM**, allowing creators to share on-chain strategies that are **mathematically proven to be encrypted**.
+**Strafhegy** is a decentralized sharing platform built on **Zama FHEVM**, allowing creators to share on-chain strategies that are **mathematically proven to be encrypted**.
 
 **How to Use Strafhegy**
 
