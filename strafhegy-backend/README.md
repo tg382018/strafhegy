@@ -1,6 +1,6 @@
 # Strafhegy: The Encrypted SocialFi Platform
 
-![Strafhegy Banner](./strafhegy-frontend/public/strafhegylogo.png)
+![Strafhegy Banner](../strafhegy-frontend/public/strafhegylogo.png)
 
 **Strafhegy** is a next-generation **SocialFi** dApp built on the **Zama FHEVM** (Fully Homomorphic Encryption Virtual Machine). It solves the critical problem of transparency vs. privacy in social trading.
 
